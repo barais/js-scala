@@ -25,7 +25,7 @@
 
 \mainmatter
 
-\title{Using Dependent Types to Build Safe and Concise JavaScript Foreign Function Interfaces}
+\title{Using Path Dependent Types to Build Safe and Concise JavaScript Foreign Function Interfaces}
 \titlerunning{Dependent Types Rock}
 
 \author{Julien Richard-Foy \and Olivier Barais\and Jean-Marc Jézéquel}
@@ -44,18 +44,19 @@ that are absent from JavaScript, such as static typing. However, the Web browser
 with a Web page, are designed for JavaScript, making it challenging to expose them in a statically typed language.
 Indeed, existing statically typed languages exposing Web browser APIs either break type safety or give developers
 less control than if they were using JavaScript. This article shows how to expose Web browser APIs in Scala in a
-type safe way while keeping the same level of control as with native APIs by using dependent types and functional
+type safe way while keeping the same level of control as with native APIs by using path dependent types and functional
 dependencies. We validate this approach in designing safe and concise foreign function interfaces between Scala and
 JavaScript for DOM events handling and DOM manipulation. We compared this approach to common frameworks such as GWT,
 Fay, Kotlin, Dart and SharpKit.
-\keywords{Dependent Types, JavaScript, Scala, Foreign Function Interface}
+\keywords{Path Dependent Types, JavaScript, Scala, Foreign Function Interface}
 \end{abstract}
 
 
 \section{Introduction}
 
 Web applications are attractive because they require no installation or deployment step on clients and enable large
-scale collaborative experiences. However, writing large Web applications is known to be
+scale collaborative experiences. Besides, now they can be executed efficiently~\cite{Gal:2009:TJT:1542476.1542528} on top of modern web-browsers. 
+However, writing large Web applications is known to be
 difficult~\cite{Mikkonen08_SpaghettiJs,Preciado05_RIAMethodologyNecessity}. One challenge comes from the fact that
 the JavaScript programming language -- which is currently the only action language natively supported by almost all
 Web clients -- lacks of constructs making large code bases maintainable (\eg static typing, first-class modules).
@@ -67,8 +68,7 @@ can generate JavaScript code (\eg Java/GWT~\cite{Chaganti07_GWT},
 SharpKit\footnote{\href{http://sharpkit.net}{http://sharpkit.net}}, Dart~\cite{Griffith11_Dart},
 Kotlin\footnote{\href{http://kotlin.jetbrains.org/}{http://kotlin.jetbrains.org/}},
 ClojureScript~\cite{McGranaghan11_ClojureScript}, Fay\footnote{\href{http://fay-lang.org/}{http://fay-lang.org/}},
-Haxe~\cite{Cannasse08_HaXe}, Opa\footnote{\href{http://opalang.org/}{http://opalang.org/}}).
-
+Haxe~\cite{Cannasse08_HaXe}, Opa\footnote{\href{http://opalang.org/}{http://opalang.org/}}). 
 However, compiling to JavaScript is not enough. Developers also need the Web browser programming environment: they
 need to interact with the Web page, to build DOM fragments, to listen to user events, \etc. A Foreign Function
 Interface mechanism could be used to make browser’s APIs available to the developers. However, JavaScript APIs are
@@ -91,10 +91,51 @@ were using the native Web APIs, but in a statically typed and convenient way?
 
 In this paper we present several ways to integrate Web browser’s APIs as statically typed APIs that are safe and
 give developers the same control level as if they were using the native APIs. We can achieve this by using advanced
-features of type systems like dependent types and functional dependencies.
+features of type systems like dependent types and functional dependencies. In particular, this article shows how to expose Web browser APIs in Scala in a
+type safe way while keeping the same level of control as with native APIs. We validate this approach in designing safe and concise foreign function interfaces between Scala and
+JavaScript for DOM events handling and DOM manipulation. We compared this approach to common frameworks such as GWT,
+Fay, Kotlin, Dart and SharpKit.
+
+
+The outline of this paper is the following.
+Section~\ref{sec:background} presents several motivating example and gives a background about path dependent type.
+Section~\ref{sec:jsscala} presents %...
+Section~\ref{sec:evaluation} validates our ideas through the design of foreign function interfaces for  DOM events handling and DOM manipulation in Scala and compare these FFIs w.r.t. the existing FFIs for these features within framework such as GWT,
+Fay, Kotlin, Dart and SharpKit.
+Section~\ref{sec:related} discusses related work, Section~\ref{sec:conclusion} concludes this paper and highlights  future work. 
+
 
 \section{Background Material}
 
+\subsection{Foreign Function Interface}
+
+A foreign function interface (FFI) is a mechanism that allows a programmer to link one programming language program to programs written in another language.
+Such mechanisms exist in lots of languages: ADA, JAVA, Haskell, LISP or GWT.  Despite the name, FFIs are not necessarily restricted to function calls; many FFIs permit method calls on objects; and some even permit migration of non-trivial datatypes and/or objects across the language boundary. Nevertheless, the challenging task come when you want to:
+(i) managing shared garbage collection policies, (ii) handling the conversion of complex datatype to map from one environment to another and (iii) handling the design of safe and concise foreign function interfaces regarding typing system constraints that can differ from one environment to another. This last issue is the one which is targetted in this paper for the design of FFI between a static typed language such as Scala and a dynamic typed language such as JavaScript. 
+
+
+
+
+\subsection{}
+
+A type system provides us a near mathematical proof that programs that compile successfully obey a set of rules and restrictions and, as such, are bug-free in that respect. For example, after compiling a Java program, developer knows that the it will not do a division of a number with a string and that, if our method foo receives an integer as argument, it will not be called anywhere with an argument of any type other than an integer.
+
+
+Among all the type theory,  dependent types is a term that describes using values as types,  the type depends on a value  This means you can encode some properties of an object in its type. Once you do that, it allows a type checker (a compiler) to verify that the object (type) is used in a suitable way.
+
+
+
+%%Scala has the concept of abstract types: types that, just like abstract methods, must be defined by subclasses. 
+%The best part is that our Forecast class – a class from the outside of this type hierarchy – can refer to this abstract type and use it in their variables. In the forecast method, our preprocessedCampaigns is an instance of algorithm.CampaignContainer; it is called a path-dependent type. This models the exact relation we wanted for our entities: independently of the concrete type of our Algorithm, we assure that the run method (that, in forecast, takes an algorithm.CampaignContainer as argument) can only take structures returned by a call to preprocess on the algorithm instance. It is important to note that all of these restrictions are enforced at compile time and, as such, do not affect the runtime performance of our system.
+%
+%More advanced type systems, such as the one featured in Scala, increase our confidence in the systems we develop and help us reduce the number of bugs before deployment – which ultimately benefits, without a doubt, our clients. It is important to note that these important validations doesn’t require extra effort from developers – no need to manually write tests or to run third-party tools – and have no runtime performance impact, which is always a key concern when developing online advertisement systems.
+%
+%The complete source code of this example can be seen here: AlgorithmJava and AlgorithmScala. If you are curious and have some knowledge in Java, I recommend you to compare the syntax of both languages and to read further about Scala here.
+%
+
+
+
+%TODO do the link and describe the problem. 
 Why is it difficult to type Web browser’s APIs?
 
 \subsection{DOM Creation}
@@ -151,7 +192,7 @@ A similar issue applies to the DOM events API.
 class EventName<E> {}
 EventName<ClickEvent> Click = new EventName<ClickEvent>();
 
-void on(EventName<E> type, Callback<E> callback) { … }
+void on(EventName<E> type, Callback<E> callback) { ... }
 
 Callback<ClickEvent> incrementCounter = new Callback<ClickEvent>() {
   @Override
@@ -202,6 +243,10 @@ val img = document.querySelector[Img](".figure") // note that the type Img is ex
 val error = document.querySelector[Int]("div") // Does not compile: querySelector can not return a number
 \end{lstlisting}
 
+
+
+\subsection{dependent types}
+
 \section{Lightweight Modular Staging}
 
 \section{Contribution}
@@ -230,30 +275,9 @@ abstract over an event (GWT, Kotlin).
 
 \section{Conclusion and Perspectives}
 
-\begin{thebibliography}{4}
 
-\bibitem{jour} Smith, T.F., Waterman, M.S.: Identification of Common Molecular
-Subsequences. J. Mol. Biol. 147, 195--197 (1981)
-
-\bibitem{lncschap} May, P., Ehrlich, H.C., Steinke, T.: ZIB Structure Prediction Pipeline:
-Composing a Complex Biological Workflow through Web Services. In: Nagel,
-W.E., Walter, W.V., Lehner, W. (eds.) Euro-Par 2006. LNCS, vol. 4128,
-pp. 1148--1158. Springer, Heidelberg (2006)
-
-\bibitem{book} Foster, I., Kesselman, C.: The Grid: Blueprint for a New Computing
-Infrastructure. Morgan Kaufmann, San Francisco (1999)
-
-\bibitem{proceeding1} Czajkowski, K., Fitzgerald, S., Foster, I., Kesselman, C.: Grid
-Information Services for Distributed Resource Sharing. In: 10th IEEE
-International Symposium on High Performance Distributed Computing, pp.
-181--184. IEEE Press, New York (2001)
-
-\bibitem{proceeding2} Foster, I., Kesselman, C., Nick, J., Tuecke, S.: The Physiology of the
-Grid: an Open Grid Services Architecture for Distributed Systems
-Integration. Technical report, Global Grid Forum (2002)
-
-\bibitem{url} National Center for Biotechnology Information, \url{http://www.ncbi.nlm.nih.gov}
-
-\end{thebibliography}
+\bibliographystyle{plain}
+\bibliography{biblio}
 
 \end{document}
+
