@@ -25,8 +25,8 @@
 
 \mainmatter
 
-\title{Using Path Dependent Types to Build Safe and Concise JavaScript Foreign Function Interfaces}
-\titlerunning{Dependent Types Rock}
+\title{Using Path-Dependent Types to Build Safe JavaScript Foreign Function Interfaces}
+%\titlerunning{Dependent Types Rock}
 
 \author{Julien Richard-Foy \and Olivier Barais\and Jean-Marc Jézéquel}
 \authorrunning{Julien Richard-Foy \emph{et. al.}}
@@ -44,19 +44,19 @@ that are absent from JavaScript, such as static typing. However, the Web browser
 with a Web page, are designed for JavaScript, making it challenging to expose them in a statically typed language.
 Indeed, existing statically typed languages exposing Web browser APIs either break type safety or give developers
 less control than if they were using JavaScript. This article shows how to expose Web browser APIs in Scala in a
-type safe way while keeping the same level of control as with native APIs by using path dependent types and functional
-dependencies. We validate this approach in designing safe and concise foreign function interfaces between Scala and
-JavaScript for DOM events handling and DOM manipulation. We compared this approach to common frameworks such as GWT,
-Fay, Kotlin, Dart and SharpKit.
-\keywords{Path Dependent Types, JavaScript, Scala, Foreign Function Interface}
+type safe way while keeping the same level of control as with native APIs by using path-dependent types and
+functional dependencies. We validate this approach in designing safe and concise foreign function interfaces between
+Scala and JavaScript for DOM events handling and DOM manipulation. We compared this approach to common frameworks
+such as GWT, Fay, Kotlin, Dart and SharpKit.
+\keywords{Path-Dependent Types, JavaScript, Scala, Foreign Function Interface}
 \end{abstract}
 
 
 \section{Introduction}
 
 Web applications are attractive because they require no installation or deployment step on clients and enable large
-scale collaborative experiences. Besides, now they can be executed efficiently~\cite{Gal:2009:TJT:1542476.1542528} on top of modern web-browsers. 
-However, writing large Web applications is known to be
+scale collaborative experiences. Besides, now they can be executed efficiently~\cite{Gal:2009:TJT:1542476.1542528} on
+top of modern web-browsers. However, writing large Web applications is known to be
 difficult~\cite{Mikkonen08_SpaghettiJs,Preciado05_RIAMethodologyNecessity}. One challenge comes from the fact that
 the JavaScript programming language -- which is currently the only action language natively supported by almost all
 Web clients -- lacks of constructs making large code bases maintainable (\eg static typing, first-class modules).
@@ -71,8 +71,9 @@ ClojureScript~\cite{McGranaghan11_ClojureScript}, Fay\footnote{\href{http://fay-
 Haxe~\cite{Cannasse08_HaXe}, Opa\footnote{\href{http://opalang.org/}{http://opalang.org/}}). 
 However, compiling to JavaScript is not enough. Developers also need the Web browser programming environment: they
 need to interact with the Web page, to build DOM fragments, to listen to user events, \etc. A Foreign Function
-Interface mechanism could be used to make browser’s APIs available to the developers. However, JavaScript APIs are
-not statically typed and make a heavy use of overloading, making them hard to expose in a statically typed language.
+Interface (FFI) mechanism could be used to make browser’s APIs available to the developers. However, JavaScript APIs
+are not statically typed and make a heavy use of overloading, making them hard to expose in a statically typed
+language.
 
 Indeed, existing statically typed languages compiling to JavaScript often expose weaker types than they should. For
 instance, the function \code{createElement} is polymorphic in its return type: it can return a \code{DivElement} as
@@ -90,18 +91,18 @@ loose type safety when they expose Web browser’s APIs. How to give developers 
 were using the native Web APIs, but in a statically typed and convenient way?
 
 In this paper we present several ways to integrate Web browser’s APIs as statically typed APIs that are safe and
-give developers the same control level as if they were using the native APIs. We can achieve this by using advanced
-features of type systems like dependent types and functional dependencies. In particular, this article shows how to expose Web browser APIs in Scala in a
-type safe way while keeping the same level of control as with native APIs. We validate this approach in designing safe and concise foreign function interfaces between Scala and
-JavaScript for DOM events handling and DOM manipulation. We compared this approach to common frameworks such as GWT,
-Fay, Kotlin, Dart and SharpKit.
+give developers the same control level as if they were using the native APIs. We achieve this by using advanced
+features of type systems like dependent types and functional dependencies. We validate this approach in designing
+safe FFI between Scala and JavaScript for DOM events handling and DOM manipulation. We compared this approach to
+common frameworks such as GWT, Fay, Kotlin, Dart and SharpKit.
 
 
 The outline of this paper is the following.
-Section~\ref{sec:background} presents several motivating example and gives a background about path dependent type.
+Section~\ref{sec:background} presents several motivating example and gives a background about path-dependent type.
 Section~\ref{sec:jsscala} presents %...
-Section~\ref{sec:evaluation} validates our ideas through the design of foreign function interfaces for  DOM events handling and DOM manipulation in Scala and compare these FFIs w.r.t. the existing FFIs for these features within framework such as GWT,
-Fay, Kotlin, Dart and SharpKit.
+Section~\ref{sec:evaluation} validates our ideas through the design of FFI for DOM events handling and DOM
+manipulation in Scala and compare these FFIs w.r.t. the existing FFIs for these features within frameworks such as
+GWT, Fay, Kotlin, Dart and SharpKit.
 Section~\ref{sec:related} discusses related work, Section~\ref{sec:conclusion} concludes this paper and highlights  future work. 
 
 
@@ -109,22 +110,40 @@ Section~\ref{sec:related} discusses related work, Section~\ref{sec:conclusion} c
 
 \subsection{Foreign Function Interface}
 
-A foreign function interface (FFI) is a mechanism that allows a programmer to link one programming language program to programs written in another language.
-Such mechanisms exist in lots of languages: ADA, JAVA, Haskell, LISP or GWT.  Despite the name, FFIs are not necessarily restricted to function calls; many FFIs permit method calls on objects; and some even permit migration of non-trivial datatypes and/or objects across the language boundary. Nevertheless, the challenging task come when you want to:
-(i) managing shared garbage collection policies, (ii) handling the conversion of complex datatype to map from one environment to another and (iii) handling the design of safe and concise foreign function interfaces regarding typing system constraints that can differ from one environment to another. This last issue is the one which is targetted in this paper for the design of FFI between a static typed language such as Scala and a dynamic typed language such as JavaScript. 
-
-
+A FFI is a mechanism that allows a programmer to link one programming language program to programs written in another
+language. Such mechanisms exist in lots of languages: Ada, Java, Haskell, Lisp or GWT. Despite the name, FFIs are
+not necessarily restricted to function calls; many FFIs permit method calls on objects; and some even permit
+migration of non-trivial datatypes and/or objects across the language boundary. Nevertheless, the challenging tasks
+come when you want to: (i) manage shared garbage collection policies, (ii) handle the conversion of complex
+datatype to map from one environment to another and (iii) handle the design of safe foreign function interfaces
+regarding typing system constraints that can differ from one environment to another. This last issue is the one which
+is targeted in this paper for the design of FFI between a statically typed language such as Scala and a dynamically
+typed language such as JavaScript.
 
 
 \subsection{}
 
-A type system provides us a near mathematical proof that programs that compile successfully obey a set of rules and restrictions and, as such, are bug-free in that respect. For example, after compiling a Java program, developer knows that the it will not do a division of a number with a string and that, if our method foo receives an integer as argument, it will not be called anywhere with an argument of any type other than an integer.
+A type system provides us a near mathematical proof that programs that compile successfully obey a set of rules and
+restrictions and, as such, are bug-free in that respect. For example, after compiling a Java program, developer knows
+that the it will not do a division of a number with a string and that, if our method foo receives an integer as
+argument, it will not be called anywhere with an argument of any type other than an integer.
 
-Among all the type theory,  dependent types is a term that describes using values as types,  the type depends on a value  This means you can encode some properties of an object in its type. Once you do that, it allows a type checker (a compiler) to verify that the object (type) is used in a suitable way. Scala defines a concept of path dependent types. Scala has the concept of abstract types: types that, just like abstract methods, must be defined by subclasses. Objects can have a type as members. As the term path dependent type says, the type depends on the path: in general, different paths give rise to different types. 
-	
+Among all the type theory,  dependent types is a term that describes using values as types, the type depends on a
+value. This means you can encode some properties of an object in its type. Once you do that, it allows a type checker
+(a compiler) to verify that the object (type) is used in a suitable way. Scala defines a concept of path-dependent
+type. Scala has the concept of abstract types: types that, just like abstract methods, must be defined by
+subclasses. Objects can have a type as members. As the term path-dependent type says, the type depends on the path:
+in general, different paths give rise to different types. 
+
 %TODO Show a simple example from the web. 
 
-More advanced type systems, such as the one featured in Scala, increase our confidence in the systems we develop and help us reduce the number of bugs before deployment. Path-dependent types and dependent method types play a crucial role for attempts to encode information into types that is typically only known at runtime. It is important to note that these important validations doesn't require extra effort from developers – no need to manually write tests or to run third-party tools – and have no runtime performance impact, which is always a key concern when developing online systems. The goal of this paper is to highlight the benefits of putting the Scala type system for building efficient web application. 
+More advanced type systems, such as the one featured in Scala, increase our confidence in the systems we develop and
+help us reduce the number of bugs before deployment. Path-dependent types and dependent method types play a crucial
+role for attempts to encode information into types that is typically only known at runtime. It is important to note
+that these important validations don't require extra effort from developers -– no need to manually write tests or to
+run third-party tools –- and have no runtime performance impact, which is always a key concern when developing online
+systems. The goal of this paper is to highlight the benefits of putting the Scala type system for building efficient
+web applications.
 
 
 
@@ -175,7 +194,7 @@ create(Input, "field").focus();
 create(Img, "figure").setSrc("http://google.com/logo.png");
 \end{lstlisting}
 
-However, the type parameter \code{E} has to be filled at usage site. If the compiler can infer it, that’s fine.
+However, the type parameter \code{E} has to be filled at use-site. If the compiler can infer it, that’s fine.
 
 \subsection{DOM Events}
 
@@ -212,7 +231,7 @@ on(Click, incrementCounter);
 
 \end{lstlisting}
 
-Again, the type parameter \code{E} has to be filled at usage site.
+Again, the type parameter \code{E} has to be filled at use-site.
 
 \subsection{Selectors}
 
@@ -231,9 +250,10 @@ We want to be able to write the following code:
 
 \begin{lstlisting}
 val input = document.find(Input) // input has type InputElement
-val el = document.querySelector("#content") // el has type Element
-val img = document.querySelector[Img](".figure") // note that the type Img is explicitly applied in this case but was automatically inferred in previous cases
-val error = document.querySelector[Int]("div") // Does not compile: querySelector can not return a number
+val el = document.find("#content") // el has type Element
+val img = document.find[Img](".figure") // note that the type Img is explicitly applied in this case but was
+                                        // automatically inferred in previous cases
+val error = document.find[Int]("div") // Does not compile: querySelector can not return a number
 \end{lstlisting}
 
 
@@ -250,14 +270,11 @@ Path-dependent types to abstract over an event name and its data type.
 
 \subsection{Selectors}
 
-\begin{itemize}
- \item Less type annotations on DOM queries, less chance to write nonsense casts
- \item Inference-driving macros help inferring more specific types
-\end{itemize}
+Less type annotations on DOM queries, less chance to write nonsense casts
 
 \subsection{DOM}
 
-?
+Path-dependent types to abstract over an element name and its data type.
 
 \section{Evaluation}
 
