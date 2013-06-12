@@ -120,18 +120,11 @@ Such mechanisms exist in lots of languages: ADA, JAVA, Haskell, LISP or GWT.  De
 
 A type system provides us a near mathematical proof that programs that compile successfully obey a set of rules and restrictions and, as such, are bug-free in that respect. For example, after compiling a Java program, developer knows that the it will not do a division of a number with a string and that, if our method foo receives an integer as argument, it will not be called anywhere with an argument of any type other than an integer.
 
+Among all the type theory,  dependent types is a term that describes using values as types,  the type depends on a value  This means you can encode some properties of an object in its type. Once you do that, it allows a type checker (a compiler) to verify that the object (type) is used in a suitable way. Scala defines a concept of path dependent types. Scala has the concept of abstract types: types that, just like abstract methods, must be defined by subclasses. Objects can have a type as members. As the term path dependent type says, the type depends on the path: in general, different paths give rise to different types. 
+	
+%TODO Show a simple example from the web. 
 
-Among all the type theory,  dependent types is a term that describes using values as types,  the type depends on a value  This means you can encode some properties of an object in its type. Once you do that, it allows a type checker (a compiler) to verify that the object (type) is used in a suitable way.
-
-
-
-%%Scala has the concept of abstract types: types that, just like abstract methods, must be defined by subclasses. 
-%The best part is that our Forecast class – a class from the outside of this type hierarchy – can refer to this abstract type and use it in their variables. In the forecast method, our preprocessedCampaigns is an instance of algorithm.CampaignContainer; it is called a path-dependent type. This models the exact relation we wanted for our entities: independently of the concrete type of our Algorithm, we assure that the run method (that, in forecast, takes an algorithm.CampaignContainer as argument) can only take structures returned by a call to preprocess on the algorithm instance. It is important to note that all of these restrictions are enforced at compile time and, as such, do not affect the runtime performance of our system.
-%
-%More advanced type systems, such as the one featured in Scala, increase our confidence in the systems we develop and help us reduce the number of bugs before deployment – which ultimately benefits, without a doubt, our clients. It is important to note that these important validations doesn’t require extra effort from developers – no need to manually write tests or to run third-party tools – and have no runtime performance impact, which is always a key concern when developing online advertisement systems.
-%
-%The complete source code of this example can be seen here: AlgorithmJava and AlgorithmScala. If you are curious and have some knowledge in Java, I recommend you to compare the syntax of both languages and to read further about Scala here.
-%
+More advanced type systems, such as the one featured in Scala, increase our confidence in the systems we develop and help us reduce the number of bugs before deployment. Path-dependent types and dependent method types play a crucial role for attempts to encode information into types that is typically only known at runtime. It is important to note that these important validations doesn't require extra effort from developers – no need to manually write tests or to run third-party tools – and have no runtime performance impact, which is always a key concern when developing online systems. The goal of this paper is to highlight the benefits of putting the Scala type system for building efficient web application. 
 
 
 
