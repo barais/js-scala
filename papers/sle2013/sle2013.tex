@@ -270,7 +270,7 @@ We want to be able to write the following code:
 val input = document.find(Input) // input has type InputElement
 val el = document.find("#content") // el has type Element
 val img = document.find[Img](".figure") // note that the type Img is explicitly applied in this case
-but was                                        // automatically inferred in previous cases
+                                        // but was automatically inferred in previous cases
 val error = document.find[Int]("div") // Does not compile: querySelector can not return a number
 \end{lstlisting}
 
