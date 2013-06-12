@@ -2,7 +2,6 @@
 \usepackage{listings}
 %\usepackage[scaled]{luximono}
 
-
 %\usepackage{natbib}
 
 % ----- begin macros
@@ -50,6 +49,7 @@ then, types, while, use},%
   belowskip=\smallskipamount,
 %  basewidth={0.5em, 0.4em},%
   basicstyle=\scriptsize,%
+  captionpos=b,
   keywordstyle=\bfseries%\sffamily\bfseries,%
 %  keywordstyle=\sffamily\bfseries,%
 %  xleftmargin=0.5cm
@@ -60,7 +60,7 @@ then, types, while, use},%
 
 \lstnewenvironment{slisting}{\lstset{language=Scala}}{}
 
-\newcommand{\code}[1]{\lstinline[language=Scala,columns=fixed,basicstyle=\ttfamily\small]|#1|}
+\newcommand{\code}[1]{\lstinline[language=Scala,columns=fixed,basicstyle=\small]|#1|}
 
 \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
 \let\endchangemargin=\endlist
