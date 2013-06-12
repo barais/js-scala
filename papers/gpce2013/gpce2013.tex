@@ -141,8 +141,8 @@ hand-tuned low-level JavaScript code.
 
 The remainder of this paper is organized as follows. The next section introduces existing approaches
 for defining cross-compiling languages and presents the framework we used to define our DSLs.
-Sections \ref{contribution} and \ref{contribution-shared} present our contribution. Section
-\ref{validation} compares our solution to common approaches. Section \ref{discussion} concludes.
+Section \ref{contribution} present our contribution. Section \ref{validation} compares our solution
+to common approaches. Section \ref{discussion} concludes.
 
 \section{Background}
 
@@ -231,8 +231,10 @@ Defining a DSL with LMS consists in the following steps:
  \item defining a code generator visiting IR nodes and generating the corresponding code.
 \end{itemize}
 
-\section{High-Level Abstraction for Client-Side Code: Selectors}
+\section{Efficient High-Level Abstractions for Web Programming}
 \label{contribution}
+
+\subsection{Selectors API}
 
 In a Web application, the user interface is defined by a HTML document that can be updated by the
 JavaScript code. A typical operation consists in searching some “interesting” element in the
@@ -355,10 +357,9 @@ name selector, a \code{SelectorGetElementsByTagName} in case of a CSS tag name s
 \code{SelectorFindAll} otherwise.
 
 
-\section{High-Level Abstractions Shared on Clients and Servers}
-\label{contribution-shared}
-
 \subsection{Monads Sequencing}
+
+This section presents an abstraction that can be shared between client and server code.
 
 Null references are a known source of problems in programming
 languages~\cite{Hoare09_Null,Nanda09_Null}. For example, consider listing \ref{null-unsafe} finding
