@@ -143,7 +143,7 @@ The remainder of this paper is organized as follows. The next section overviews 
 existing approaches providing high-level languages for Web programming. Section \ref{sec:lms}
 presents the framework we used to define our DSLs. Section \ref{sec:contribution} presents our
 contribution. Section \ref{sec:validation} compares our solution to common approaches. Section
-\ref{sec:conclusion} concludes.
+\ref{sec:discussion} discusses our results and section \ref{sec:conclusion} concludes.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -234,7 +234,12 @@ Defining a DSL with LMS consists in the following steps:
 \section{Efficient High-Level Abstractions for Web Programming}
 \label{sec:contribution}
 
+This section presents some tasks typically performed in Web applications, either on client-side or
+server-side or on both, generalizes them in terms of high-level abstractions, and shows how they are
+implemented in js-scala to generate efficient code.
+
 \subsection{Selectors API}
+\label{sec:selectors}
 
 In a Web application, the user interface is defined by a HTML document that can be updated by the
 JavaScript code. A typical operation consists in searching some “interesting” element in the
@@ -387,6 +392,7 @@ abstractions (the \code{find} and \code{findAll} functions) exist only in the in
 in the final JavaScript program.
 
 \subsection{Monads Sequencing}
+\label{sec:option}
 
 This section presents an abstraction that can be shared between client and server code.
 
@@ -487,6 +493,7 @@ available on server-side by writing a code generator similar to the JavaScript c
 targeting Scala. So the same abstraction is efficiently translated on both server and client sides.
 
 \subsection{DOM Fragments Definition}
+\label{sec:forest}
 
 This section shows how we define an abstraction shared between clients and servers, as in the
 previous section, but that has different native counterparts on client and server sides. The
@@ -696,12 +703,36 @@ JavaScript version.
 We were able to share HTML DOM fragment definitions between server-side and client-side only in the
 js-scala version.
 
+
+\section{Discussion}
+\label{sec:discussion}
+
+We implemented our solution as compiled embedded DSLs in Scala. Generating code from our DSLs is a
+two steps process: an initial Scala program first evaluates to an intermediate representation of
+the final program that is traversed by code generators to produce the final JavaScript code.
+Domain-specific optimizations can happen during the IR construction (as shown in section
+\ref{sec:selectors}) or during the code generation (as shown in section \ref{sec:option}).
+
+An important consequence of the implementation as compiled embedded DSLs is that defining a DSL
+that can be shared between server and client sides requires a low effort: compiled embedded DSLs are
+simply defined as libraries but let developers specialize the generated code according to each
+target platform (as shown in section \ref{sec:forest}).
+
+In other words, the compiled embedded DSL approach gives us a way to exploit the Scala host language
+to define high-level language units that integrate seamlessly together and bring domain-specific
+knowledge to the code generation scheme to produce efficient code for client and server sides.
+
+These characteristics allowed us to capture some Web programming patterns as high-level
+abstractions, making the code of our application simpler to reason about and making some parts of
+the code reusable between client and server sides, while keeping execution performances on
+client-side as high as if we used hand-tuned low-level JavaScript code.
+
 \section{Conclusion}
 \label{sec:conclusion}
 
 We were able to provide high-level abstractions for Web programming, decreasing code complexity and
 improving code reuse between client and server sides, while generating efficient low-level code
-leveraging both target environments.
+leveraging both client and server environments.
 
 %\appendix
 %\section{Appendix Title}
