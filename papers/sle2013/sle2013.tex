@@ -147,9 +147,35 @@ that, it allows a type checker (a compiler) to verify that the object (type) is 
 way. Scala defines a concept of path-dependent type. Scala has the concept of abstract types: types
 that, just like abstract methods, must be defined by subclasses. Objects can have a type as members.
 As the term path-dependent type says, the type depends on the path: in general, different paths give
-rise to different types. 
+rise to different types. In the example of Figure~\ref{pathdependenttypeexample}\footnote{highly inspired from https://github.com/milessabin/shapeless\#sized-types}, we show how the size of the list can be used as a type information. We define a function row that convert a list of element into a printed html array, we define a function html that takes a list of size N as a first parameter and a list of list of size N as a second parameter. We use the path dependent type to create these type lists: \emph{Sized}. Consequently if we use this function \emph{html} with a list of three elements (\textit{headers}) and a list of list of 3 elements (\textit{rows}), the program compiles and runs correctly. If we use  this function \emph{html} with a list of four elements (\textit{extendedHeaders}) and a list of list of 3 elements (\textit{rows}), it does not compiled. 
 
-%TODO Show a simple example from the web. 
+
+
+\begin{figure}
+\begin{lstlisting}[label=pathdependenttypeexample,caption=Path dependent type example]
+//functions definition
+def row(cols : Seq[String]) 
+	= cols.mkString("<td>", "</td> <td>", "</td>")
+def html[N <: Nat]
+	(hdrs : Sized[Seq[String], N],
+	rows : List[Sized[Seq[String], N]]) 
+		= row(hdrs) :: rows.map(row(_))
+
+//Example1 that compiles
+val headers = Sized("Title", "Studio", "Release year")
+val rows = List(  
+	Sized("Ice Age: Dawn of the Dinosaurs", "Fox","2009"),
+	Sized("Finding Nemo","Disney Pixar","2003")
+)
+// headers and rows statically known to have the name number of columns
+val formatted = html(headers, rows)                        // Compiles
+
+//Sample 2 that does not compile
+// extendedHeaders has the wrong number of columns for rows
+val extendedHeaders = Sized("Title", "Author", "Release year", "Runtime")
+val badFormatted = html(extendedHeaders, rows)          
+\end{lstlisting}
+\end{figure}
 
 More advanced type systems, such as the one featured in Scala, increase our confidence in the
 systems we develop and help us reduce the number of bugs before deployment. Path-dependent types and
@@ -161,9 +187,14 @@ systems. The goal of this paper is to highlight the benefits of putting the Scal
 building efficient web applications.
 
 
+% 
+Dynamic typing may give programmers more flexibility but can make it harder for little scripts to grow into mature
+and robust code bases and to perform refactorings~\cite{Meijer04_StaticDynamic}. For instance, in the case of RIAs, a
+mispell in an event name may break the program behavior without anyone getting a sensible error message. Let us trying to come back on some examples of Web API that can no be easily typed correctly without the use of advanced type system.
+
 
 %TODO do the link and describe the problem. 
-Why is it difficult to type Web browser’s APIs?
+%Why is it difficult to type Web browser’s APIs?
 
 \subsection{DOM Creation}
 
@@ -278,7 +309,121 @@ val error = document.find[Int]("div") // Does not compile: querySelector can not
 
 \subsection{dependent types}
 
-\section{Lightweight Modular Staging}
+\section{Js-scala: A DSL for web programming design using LMS}
+
+
+JavaScript libraries could address some of the challenges presented above, but addressing type safety and
+asynchronous programming issues require language modifications (\eg{} to bring a type system and a sequencing
+notation). Defining a language requires a high effort, especially to build development tools for the language so we
+chose to define our language as a compiled embedded DSL in Scala.
+
+%\subsection{Introduction to Lightweight Modular Staging}
+%\label{intro-lms}
+
+\subsection{LMS Overview}
+
+We use the Lightweight Modular Staging framework (LMS) to define our compiled embedded DSL. The main idea is that a
+program written using a DSL is evaluated in two stages (or steps): the first stage builds an intermediate
+representation of the program and the second stage transforms this intermediate representation into executable code
+(figure \ref{lms-diagram}).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=7cm]{lms.pdf}
+  \caption{Compilation of a program using LMS. An initial Scala program using embedded DSLs (on the left) evaluates
+  to an intermediate representation from which the final program’s code is generated (on the right).}
+  \label{lms-diagram}
+\end{figure}
+
+The bindings between stages are type-directed: a value of type \code{Rep[Int]} in the first stage will yield a value
+of type \code{Int} in the second stage. If you consider the following code:
+\begin{lstlisting}
+val inc: Rep[Int] => Rep[Int] =
+  x => x + 1
+\end{lstlisting}
+The function looks like
+a regular Scala function excepted that its parameter type and its return type are wrapped in the \code{Rep[T]} type
+constructor that denotes intermediate representations. The \code{+} operator has been defined on \code{Rep[Int]}
+values and returns the intermediate representation of an addition. Finally, the \code{inc} function returns the
+intermediate representation of a computation yielding the number following the value of the parameter \code{x}.
+
+You can get a \code{T} value from a \code{Rep[T]} value by generating code from the intermediate representation and
+compiling it:
+\begin{lstlisting}
+val compiledInc: Int => Int =
+  compile(inc)
+\end{lstlisting}
+The \code{compile} function takes a staged program of type \code{Rep[A] => Rep[B]} and returns a final program of
+type \code{A => B}.
+
+The intermediate representation implementation is hidden for users but DSLs authors have to provide the corresponding
+intermediate representation of each construct of their language. For that purpose, LMS comes with an extensible
+intermediate representation implementation defining computations as a graph of statements. In the case of the
+\code{inc} function, this graph contains a \code{Plus} node applied on a \code{Sym} node (the \code{x} parameter) and
+a \code{Const} node (the literal value \code{1}).
+
+Then, the code generation process consists in sorting this graph according to expressions dependencies and to emit
+the code corresponding to each node. The listings \ref{codegen-js} and \ref{codegen-scala} show the JavaScript and
+Scala generated code for the \code{inc} function:
+\begin{multicols}{2}
+\lstinputlisting[language=JavaScript, caption=JavaScript code generation, label=codegen-js]{inc.js}
+\lstinputlisting[caption=Scala code generation, label=codegen-scala]{inc.scala}
+\end{multicols}
+
+Defining a DSL consists in three steps, each defining:
+
+\begin{itemize}
+\item The concrete syntax: an abstract API manipulating \code{Rep[_]} values~;
+\item The intermediate representation: an implementation of the concrete syntax in terms of statement nodes~;
+\item A code generator for the intermediate representation: a \emph{pretty-printer} for each DSL statement node.
+\end{itemize}
+
+\subsubsection{Example: null references}
+
+As an illustration of the staging mechanism, we present a simple DSL to handle null references. This DSL provides an
+abstraction at the stage-level that is removed by optimization during the code generation.
+
+Null references are a known source of problems in programming languages~\cite{Hoare09_Null,Nanda09_Null}. For
+example, consider the following typical JavaScript code finding a particular widget in the page and a then particular
+button in the widget:
+
+\begin{lstlisting}[language=JavaScript,label=null-unsafe,caption=Unsafe code]
+var loginWidget = document.querySelector("div.login");
+var loginButton = loginWidget.querySelector("button.submit");
+loginButton.addEventListener("click", function (e) { ... });
+\end{lstlisting}
+
+The native \code{querySelector} method returns \code{null} if no node matched the given selector in the document. If
+we run the above code in a page where the widget is not present, it will throw an error and stop further JavaScript
+execution. We can write defensive code to handle \code{null} cases, but it leads to very cumbersome code:
+
+\begin{lstlisting}[language=JavaScript,label=null-defensive,caption=Defensive programming to handle null references]
+var loginWidget = document.querySelector("div.login");
+if (loginWidget !== null) {
+  var loginButton = loginWidget.querySelector("button.submit");
+  if (loginButton !== null) {
+    loginButton.addEventListener("click", function (e) { ... });
+  }
+}
+\end{lstlisting}
+
+Ja-scala is a DSL that has both the safety and performance of listing \ref{null-defensive} but the
+expressiveness of listing \ref{null-unsafe}. We can get safety by wrapping potentially null values of type
+\code{Rep[A]} in a container of type \code{Rep[Option[A]]} requiring explicit dereferencing, we can get
+expressiveness by using the Scala \code{for} notation for dereferencing, and finally we can get performance by
+generating code that does not actually wraps values in a container but instead checks if they are \code{null} or not
+when dereferenced. The wrapping container exists only at the stage-level and is removed during the code generation.
+Here is a Scala listing that uses our DSL (implementation details are given in section \ref{implementation}):
+
+\begin{lstlisting}
+for {
+  loginWidget <- document.find("div.login")
+  loginButton <- loginWidget.find("submit.button")
+} loginButton.on(Click) { e => ... }
+\end{lstlisting}
+
+The evaluation of the above listing produces a graph of statements from which JavaScript code equivalent to
+listing \ref{null-defensive} is generated.
 
 \section{Contribution}
 
@@ -298,8 +443,84 @@ Path-dependent types to abstract over an element name and its data type.
 
 \subsection{Events}
 
+
 Other languages either provide loose information about the data type of the listened event (Dart) or
 give no way to abstract over an event (GWT, Kotlin).
+
+The most popular JavaScript library, jQuery~\cite{Bibeault08_jQuery}, used by more than 40\% of the top million
+sites\footnote{\href{http://trends.builtwith.com/javascript}{http://trends.builtwith.com/javascript}} aims to
+simplify RIA development. It handles the \code{null} references problem by wrapping each query result in a container
+so before each further method call it tests the emptiness of the container and applies the operation effectively only
+if the container is not empty. It provides an expressive API but the emptiness checking involves a slight performance
+penalty since each result is wrapped and then unwrapped for the subsequent method invocation. jQuery also has an API
+to turn asynchronous computations into first-class citizens. However, jQuery is just a library and thus cannot bring
+type safety to JavaScript programs.
+
+TypeScript\footnote{\href{http://www.typescriptlang.org/}{http://www.typescriptlang.org/}} is a language compiling to
+JavaScript supporting classes, modules and soft typing. Because TypeScript is a superset of JavaScript, any valid
+JavaScript program is a valid TypeScript program. Developers can progressively leverage TypeScript’s features to turn
+their JavaScript sources into large, modular and more robust code bases. However, TypeScript does not provide advanced type feature to deal with DOM management.
+
+The Roy~\cite{McKenna_Roy} programming language is a statically typed functional programming language compiling to
+JavaScript. It features global type inference, algebraic data types, pattern matching and a sequencing notation
+similar to Scala’s \code{for} notation. Roy does not address concerns such as event handling and DOM fragments
+definition. It has no specific feature to deal with correctly typed FFI. 
+
+
+GWT~\cite{Chaganti07_GWT} compiles Java code to JavaScript. It exposes the browser’s APIs through type-safe Java APIs
+and simplifies DOM fragments definition. However, to provide correct type management, GWT provides a verbose API to deal with DOM fragment definition and event handling. New DOM Api can not be easily managed in a concise and safe way as the Java programming language does not provide advanced type feature. 
+
+Kotlin\footnote{\href{http://kotlin.jetbrains.org/}{http://kotlin.jetbrains.org/}} is a recent language written by
+JetBrains, that targets both the JVM and JavaScript. It has libraries addressing partially Web programming concerns
+and supports advanced programming language features such as mixins, type inference, variance annotations for type
+parameters and pattern matching. In the specific problem of the definition of concise and safe FFIs it has the same issue than GWT. 
+
+Opa\footnote{\href{http://opalang.org/}{http://opalang.org/}} and Links~\cite{Cooper07_Links} are languages designed
+for Web programming. They feature static typing with global type inference, modules and pattern matching. These
+languages provide a syntactic sugar for writing HTML fragments directly in the code. The server and client parts of
+an application are written in a single language and the system can decide whether a code fragment will run on
+server-side, client-side or both. However, these languages are not extensible, so there is no way for developers to
+customize the compilation process of their abstractions on client and server sides. Furthermore, hiding the code
+execution distribution gives programmers less control on communication error handling~\cite{Guerraoui99_Distributed}.
+
+Dart~\cite{Griffith11_Dart} is a language designed specifically for Web programming. It has been designed to have a
+familiar syntax for JavaScript developers and supports soft typing, classes and a module system. It also provides a
+high-level concurrent programming system similar to an actor system. Finally, Dart code can be executed on both
+client and server sides but the compiler is not extensible so developers cannot customize the compilation process of
+a given abstraction on client and server sides.
+
+Table \ref{comparison} gives a synthetic view of the comparison of our work with other mainstream approaches. Lines
+give features desired to write large Web applications and colums list mainstream tools for Web programming. Cells
+show the support level of each feature for each tool.
+
+TODO{Fay}
+
+\begin{table}
+\centering
+\begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+\hline
+& jQuery & TypeScript & Roy & GWT & Kotlin & Opa & Dart & js-scala \\
+\hline
+Type safe event handling & & & & *** & & & & *** \\
+\hline
+DOM definition & * & & & *** & ** & *** & * & *** \\
+\hline
+Static typing & & * & ** & ** & ** & ** & * & ** \\
+\hline
+Easiness for defining libraries & ** & *** & *** & *** & *** & *** & *** & * \\
+\hline
+\end{tabular}
+\caption{Support of concise and safe FFI. Zero star means that the feature is not supported
+at all, three stars mean a strong support.}
+\label{comparison}
+\end{table}
+
+Several model-driven methodologies for creating web applications have been proposed, including
+\cite{schwabe1996systematic,lima2003modeling,ceri2000web,koch2001authoring,pastor2003oows,valverde2007mda,vdovjak2003engineering,kraus2007model,nunes2006rapid,brambilla2008designing,valderas2007transformational,van2006hera,Groenewegen08_WebDSL}.
+Many of them follow the standard top-down MDE vision in providing abstractions and code generators, nevertheless
+these cannot be easily customized or they generate only application skeletons.
+
+
 
 \section{Conclusion and Perspectives}
 
