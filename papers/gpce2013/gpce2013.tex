@@ -69,8 +69,8 @@ to be difficult~\cite{Mikkonen08_SpaghettiJs,Preciado05_RIAMethodologyNecessity}
 comes from the fact that the business logic is scattered into heterogeneous client-side and
 server-side environments~\cite{Echeverria09_RIA,Kuuskeri09_PartitioningClientServer}. This gives
 less flexibility in the engineering process and requires a higher maintenance effort: there is no
-way to move a piece of code targeting the server-side to target the client-side, the code has to be
-rewritten. Even worse, logic parts that run on both client-side and server-side need to be
+way to move a piece of code targeting the server-side to target the client-side -- the code has to
+be rewritten. Even worse, logic parts that run on both client-side and server-side need to be
 duplicated. For instance, HTML fragments may be built from the server-side when a page is requested
 by a client, but they may also be built from the client-side to perform an incremental update
 subsequent to an user action. How could developers write HTML fragment definitions once and render
@@ -90,7 +90,7 @@ Using the same programming language on both server-side and client-side could im
 engineering process by enabling code reuse between both sides. Incidentally, the JavaScript language
 -- which is currently the most supported the action language on Web clients -- can be used on
 server-side, and an increasing number of programming languages or compiler back-ends can generate
-JavaScript code (\eg Java/GWT~\cite{Chaganti07_GWT},
+JavaScript code (\eg{} Java/GWT~\cite{Chaganti07_GWT},
 SharpKit\footnote{\href{http://sharpkit.net}{http://sharpkit.net}}, Dart~\cite{Griffith11_Dart},
 Kotlin\footnote{\href{http://kotlin.jetbrains.org/}{http://kotlin.jetbrains.org/}},
 ClojureScript~\cite{McGranaghan11_ClojureScript},
@@ -106,8 +106,8 @@ performance reasons?
 Generating efficient code for heterogeneous platforms is hard to achieve in an extensible way: the
 translation of common abstractions like collections into their native counterpart (JavaScript arrays
 on client-side and standard library's collections on server-side) may be hard-coded in the compiler,
-but that approach would not scale to handle all the abstractions a complete application may use (\eg
-HTML fragment definitions, form validation rules, or even some business data type that may be
+but that approach would not scale to handle all the abstractions a complete application may use
+(\eg{} HTML fragment definitions, form validation rules, or even some business data type that may be
 represented differently).
 
 On one hand, for engineering reasons, developers want to write Web applications using a single
@@ -129,7 +129,7 @@ contributions\footnote{The code is available at
 
 \begin{itemize}
  \item we define high-level abstractions, typically used in Web programming, that generate low-level
-code leveraging native Web browsers APIs;
+code leveraging native Web browser APIs;
  \item in the case of abstractions shared between servers and clients, we specialize the code
 generation in order to leverage the target platform native environments.
 \end{itemize}
@@ -201,7 +201,7 @@ Examples of languages following this approach are Java/GWT, Kotlin, HaXe and Sha
 
 The last approach, shown in figure \ref{langs} (d), can be seen as a middle-ground between the two
 previous approaches: DSLs are embedded in a host language but use a code generation process. This
-approach share the same benefits and limits as embedded DSLs for defining language units. The code
+approach shares the same benefits and limits as embedded DSLs for defining language units. The code
 generation process is specific to each DSL and gives the opportunity to perform domain-specific
 optimizations. In other words deeply embedded DSLs bring domain-specific knowledge to the compiler.
 
@@ -270,7 +270,7 @@ handle special cases. For the developer it is not convenient to have to master s
 performing similar tasks. In fact, most JavaScript developers use the jQuery
 library~\cite{Bibeault08_jQuery}\footnote{According to
 \href{http://trends.builtwith.com/javascript}{http://trends.builtwith.com/javascript}, jQuery is
-used by more than 40\% of the top million sites} that provides only one high-level function to
+used by more than 40\% of the top million sites.} that provides only one high-level function to
 search for elements. Listings \ref{vanilla-selectors} and \ref{jquery-selectors} show two equivalent
 JavaScript programs performing element searches, the first one using the native APIs and the second
 one using jQuery.
@@ -323,11 +323,11 @@ Listing~\ref{js-scala-selectors} shows how to implement listing~\ref{jquery-sele
 js-scala. We provide two functions for searching elements: \code{find} to find the first element
 matching a selector and \code{findAll} to find all the matching elements. During the first
 evaluation step, these functions try to analyze the selector that is passed as parameter and, when
-appropriate, produce code using the specialized API, otherwise they produce  code using
+appropriate, produce JavaScript code using the specialized API, otherwise they produce  code using
 \code{querySelector} and \code{querySelectorAll}. As a result, listing~\ref{js-scala-selectors}
 generates a JavaScript program identical to listing~\ref{vanilla-selectors}: the high-level
-abstraction (the \code{find} and \code{findAll} functions) exist only in the initial program, not in
-the final JavaScript program.
+abstractions (the \code{find} and \code{findAll} functions) exist only in the initial program, not
+in the final JavaScript program.
 
 \begin{figure}
 \begin{lstlisting}[label=selector-impl,caption=Selectors optimization]
@@ -396,7 +396,7 @@ if (loginWidget !== null) {
 \end{lstlisting}
 \end{figure}
 
-Some programming languages encode optional values with a monad (\eg \code{Maybe} in Haskell and
+Some programming languages encode optional values with a monad (\eg{} \code{Maybe} in Haskell and
 \code{Option} in Scala). In that case, sequencing over the monad encodes optional value
 dereferencing. If the language supports a convenient syntax for monad sequencing, it brings a
 convenient syntax for optional value dereferencing, alleviating developers from the burden of
