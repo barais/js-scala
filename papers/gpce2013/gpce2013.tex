@@ -373,11 +373,12 @@ and
 \begin{lstlisting}[basicstyle=\small]
 document.find("#add-user")
 \end{lstlisting}
-In the former case, the selector is parsed and does not match an ID selector, so a
-\code{SelectorFind} node (translated into a call to the general \code{querySelector} function) is
-returned. In the latter case, the selector matches an ID selector so a
-\code{DocumentGetElementById} node (translated into a call to the specialized \code{getElementById}
-function).
+In the former case, the selector is parsed and does not match an ID selector (it is a composite
+selector matching button elements within the element having the \code{add-user} id), so a
+\code{SelectorFind} node is returned, then translated into a call to the general
+\code{querySelector} function. In the latter case, the selector matches an ID selector so a
+\code{DocumentGetElementById} node is returned, then translated into a call to the specialized
+\code{getElementById} function.
 
 Finally, listing~\ref{js-scala-selectors} shows how to implement listing~\ref{jquery-selectors} in
 Scala using js-scala. The code has the same abstraction level as with jQuery, however it
@@ -481,9 +482,9 @@ simply generates an expression testing if the value is \code{null}. In the case 
 \code{OptionForeach} node, it wraps the code block dereferencing the value within a \code{if}
 checking that the value is not \code{null}.
 
-Last but not least, we were able to make this abstraction available on server-side by writing a code
-generator similar to the JavaScript code generator, but targeting Scala. So the same abstraction is
-efficiently translated on both server and client sides.
+The IR nodes are not tied to the JavaScript code generator, so we are able to make this abstraction
+available on server-side by writing a code generator similar to the JavaScript code generator, but
+targeting Scala. So the same abstraction is efficiently translated on both server and client sides.
 
 \subsection{DOM Fragments Definition}
 
@@ -530,12 +531,13 @@ server-side using the standard Scala XML library. The reader may notice that the
 and server-side APIs are very different and that the client-side API is very low-level and
 inconvenient to use.
 
-Instead, we provide a common high-level DSL for defining HTML fragments and we make this DSL
-generate code leveraging native environments. Listing \ref{forest} shows how to implement our
-example with our DSL. The \code{el} function defines an HTML element, eventually containing
-attributes and children elements. Any children of an element that is not an element itself is
-converted into a text node. The children elements of an element can also be obtained
-dynamically from a collection, as shown in listing \ref{forest-loops}.
+Our first step consists in capturing, in a high-level API, the concepts common to the JavaScript and
+Scala APIs. Though they are different, both APIs define HTML elements with attributes and content.
+We define an \code{el} function to define an HTML element, eventually containing attributes and
+children elements. Any children of an element that is not an element itself is converted into a text
+node. Listing \ref{forest} shows how to implement our example with our DSL. The children elements
+of an element can also be obtained dynamically from a collection, as shown in listing
+\ref{forest-loops}.
 
 \begin{figure}
 \begin{lstlisting}[label=forest,caption=DOM definition DSL]
@@ -558,13 +560,12 @@ def articlesUi(articles: Rep[Seq[Article]]) =
 \end{figure}
 
 The \code{el} function returns an \code{Element} IR node that is a tree composed of other
-\code{Element} nodes and \code{Text} nodes. This tree is traversed by the code generators to produce
-code building an equivalent DOM tree on client-side and code building an equivalent XML fragment on
-server-side. When the children of an element are constant values (as in listing \ref{forest}) rather
-than dynamically computed (as in listing \ref{forest-loops}), the code generators inline the loop
-that adds children to their parent, for better performance. As a result, listing \ref{forest}
-generates a code equivalent to listing \ref{dom-api} on client-side and equivalent to
-\ref{scala-xml-api} on server-side.
+\code{Element} and \code{Text} nodes. The JavaScript and Scala code generators traverse this tree
+and produce code building an equivalent DOM tree and XML fragment, respectively. When the children
+of an element are constant values (as in listing \ref{forest}) rather than dynamically computed (as
+in listing \ref{forest-loops}), the code generators unroll the loop that adds children to their
+parent, for better performance. As a result, listing \ref{forest} generates a code equivalent to
+listing \ref{dom-api} on client-side and equivalent to \ref{scala-xml-api} on server-side.
 
 \begin{figure}
 \begin{lstlisting}[language=JavaScript,label=js-gen-forest,caption=JavaScript code generator for the
@@ -622,9 +623,10 @@ generators for this DSL. They basically follow the same pattern: they visit \cod
 \section{Evaluation}
 \label{sec:validation}
 
-Our goal was to evaluate the level of abstraction provided by each solution and their performances.
-We took the number of lines of code as an inverse approximation of the level of abstraction. We also
-measured the ability to share code between client and server sides.
+Our goal is to evaluate the level of abstraction provided by our solution and its performances, by
+comparing it with common approaches. We take the number of lines of code as an inverse approximation
+of the level of abstraction. We also evaluate the ability to share code between client and server
+sides.
 
 We realized a micro-benchmark involving a program using essentially the optional value DSL, and we
 benchmarked a real world program. In each case we have written several implementations of the
@@ -635,8 +637,8 @@ the Google Chrome v27 Web browser.
 
 \subsection{Micro-Benchmark}
 
-The micro-benchmark focuses on the optional value abstraction. We reimplemented it in plain
-JavaScript, Java and HaXe and wrote a small program manipulating optional values.
+The micro-benchmark focuses on the optional value abstraction. We reimplemented this abstraction in
+plain JavaScript, Java and HaXe and wrote a small program manipulating optional values.
 
 \begin{figure}
 \centering
@@ -646,8 +648,8 @@ JavaScript, Java and HaXe and wrote a small program manipulating optional values
 \end{figure}
 
 Figure \ref{micro-benchmark} shows the micro-benchmark results. The js-scala version of the
-program runs between 3 to 100 times than other approaches. This version also takes less lines of
-code than others (this result is almost due to the special \code{for} notation, that has no
+program runs between 3 to 10 times faster than other approaches. This version also takes less lines
+of code than others (this result is almost due to the special \code{for} notation, that has no
 equivalent in other benchmarked languages). Finally, the js-scala program has a performance to lines
 of code ratio more than 4 times higher than others.
 
@@ -681,7 +683,7 @@ the js-scala version is slightly slower by 6\%). It is worth noting that the van
 the HaXe versions use low-level code compared to js-scala, as shown in the middle of the figure
 (lines of code): the js-scala version needs only 74 lines of code while the vanilla JavaScript
 version needs 116 lines of code (57\% bigger) and the HaXe version needs 148 lines of code (100\%
-bigger). The jQuery JavaScript version, of which code is high-level (54 lines of code, 27\% less
+bigger). The jQuery JavaScript version, which code is high-level (54 lines of code, 27\% less
 than js-scala) runs 10 times slower than the js-scala version.
 
 The last part of the figure compares the runtime performance to lines of code ratio. Js-scala shows
@@ -697,8 +699,9 @@ js-scala version.
 \section{Conclusion}
 \label{sec:conclusion}
 
-We implemented a high-level language abstracting over client and server heterogeneity but producing
-efficient code.
+We were able to provide high-level abstractions for Web programming, decreasing code complexity and
+improving code reuse between client and server sides, while generating efficient low-level code
+leveraging both target environments.
 
 %\appendix
 %\section{Appendix Title}
