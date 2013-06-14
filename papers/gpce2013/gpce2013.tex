@@ -783,9 +783,8 @@ are written. However, we think that a richer application would have more parts o
 to be shared between client and server sides, thus giving even better results on the code reuse
 statistics.
 
-
-
-Finally, the GWT version may not have been written in an as idiomatic as possible way.
+Finally, the GWT version may not have been written in an as idiomatic as possible way. 
+Indeed, we mainly catch the events directly on the HTML DOM as we develop in JavaScript without reusing all the GWT widget. We do not build the web applications as a blank page with a set of widgets. However, this way of developing using GWT has no impact on the performance and a minor impact on the number of lines of code. This code has been modularized in the GWT version of Chooze. 
 
 \section{Discussion}
 \label{sec:conclusion}
