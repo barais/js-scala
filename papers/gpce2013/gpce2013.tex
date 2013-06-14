@@ -29,8 +29,8 @@
 \copyrightyear{2013}
 \copyrightdata{[to be supplied]} 
 
-\titlebanner{banner above paper title}        % These are ignored unless
-\preprintfooter{short description of paper}   % 'preprint' option specified.
+%\titlebanner{banner above paper title}        % These are ignored unless
+%\preprintfooter{short description of paper}   % 'preprint' option specified.
 
 \title{Efficient High-Level Abstractions for Web Programming}
 %\subtitle{You don’t have to trade abstraction for control}
@@ -42,6 +42,9 @@
 \maketitle
 
 \begin{abstract}
+%\vspace{0.2cm}
+
+
 Writing large Web applications is known to be difficult. One challenge comes from the fact that the
 application's logic is scattered into heterogeneous clients and servers, making it difficult to
 share code between both sides or to move code from one side to the other. Another challenge is
@@ -63,6 +66,8 @@ JavaScript code.
 \keywords Heterogeneous code generation, Domain-specific languages, Scala, Web
 
 \section{Introduction}
+
+%\vspace{0.2cm}
 
 Web applications are attractive because they require no installation or deployment steps on clients
 and enable large scale collaborative experiences. However, writing large Web applications is known
@@ -148,18 +153,24 @@ contribution. Section \ref{sec:validation} compares our solution to common appro
 \section{Related Work}
 \label{sec:related-work}
 
+
+%\vspace{0.1cm}
+
 We classified existing approaches providing high-level abstractions for Web programming in four
 categories, as shown in figure \ref{fig:langs}.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{center}
-\includegraphics[width=7cm]{langs.pdf}
+\includegraphics[width=7.5cm]{langs.pdf}
 \end{center}
 \caption{Language engineering processes}
+\vspace{-0.5cm}
 \label{fig:langs}
 \end{figure}
 
 \paragraph{Fat Languages}
+
+%\vspace{0.1cm}
 
 The first approach for defining a cross-platform language consists in hard-coding, in the compiler,
 the code generation scheme of each language feature to each target platform. Figure \ref{fig:langs}
@@ -173,6 +184,8 @@ Dart~\cite{Griffith11_Dart}.
 
 \paragraph{Domain-Specific Languages}
 
+%\vspace{0.1cm}
+
 Another approach consists in defining several independent domain-specific
 languages~\cite{Van00_DSL}, each one focusing on concerns specific to a given problem domain, and
 then to combine all the source artifacts written with these language into one executable program, as
@@ -182,6 +195,8 @@ difficult to have interoperability between DSLs. \cite{Groenewegen08_WebDSL} gav
 a domain-specific language for defining Web applications.
 
 \paragraph{Thin Languages}
+
+%\vspace{0.1cm}
 
 Alternatively, one can define concepts relative to a specific domain as a library on top of a thin
 general purpose language (it is also referred to as a domain-specific \emph{embedded}
@@ -196,6 +211,7 @@ and SharpKit.
 
 \paragraph{Deeply Embedded Languages}
 
+%\vspace{0.1cm}
 The last approach, shown in figure \ref{fig:langs} (d), can be seen as a middle-ground between the
 two previous approaches: DSLs are embedded in a host language but use a code generation process.
 This approach shares the same benefits and limits as embedded DSLs for defining language units. The
@@ -254,7 +270,7 @@ as mouse clicks). The standard API provides several functions to search elements
 according to their name or attribute values. Figure~\ref{selectors-api} summarizes the available
 functions and their differences.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{center}
 \begin{tabular}{| l | p{3cm} |}
 \hline
@@ -277,7 +293,7 @@ general functions while the others handle special cases.}
 \label{selectors-api}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[language=JavaScript,label=vanilla-selectors,caption=Searching elements using the
 native selectors API]
 function getWords() {
@@ -300,7 +316,7 @@ selectors API to retrieve a list of input fields within a form. The existence of
 specialized functions in the API makes it possible to write efficient code, but forces users to
 think at a low abstraction level.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[language=JavaScript,label=jquery-selectors,caption=Searching elements in jQuery]
 function getWords() {
   var form = $('#add-user');
@@ -329,7 +345,7 @@ We are able to achieve this by analyzing, during the first evaluation step, the 
 passed as parameter and, when appropriate, producing JavaScript code using the specialized API,
 and otherwise producing code using \code{querySelector} and \code{querySelectorAll}.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[label=selector-impl,caption=Selectors optimization]
 def find(selector: Rep[String]) =
   getConstIdCss(selector) match {
@@ -357,7 +373,7 @@ analyzed and the function returns a \code{SelectorGetElementsByClassName} in cas
 name selector, a \code{SelectorGetElementsByTagName} in case of a CSS tag name selector, and a
 \code{SelectorFindAll} otherwise.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[label=js-scala-selectors,caption=Searching elements in js-scala]
 def getWords() = {
   val form = document.find("#add-user")
@@ -367,7 +383,7 @@ def getWords() = {
 \end{lstlisting}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{center}
 \includegraphics[width=5cm]{ir.pdf}
 \end{center}
@@ -376,14 +392,14 @@ def getWords() = {
 \label{fig:ir}
 \end{figure}
 
-Figure \ref{fig:ir} shows the IRs returned by the evaluation of
-\begin{lstlisting}[basicstyle=\small]
-document.find("#add-user button")
-\end{lstlisting}
-and 
-\begin{lstlisting}[basicstyle=\small]
-document.find("#add-user")
-\end{lstlisting}
+\vspace{1 cm}
+
+Figure \ref{fig:ir} shows the IRs returned by the evaluation of \small{
+$document\\.find("\#add-user button")$} \normalsize{and}  \small{$ document.find("\#add-user")$}.
+
+\normalsize{}
+
+\sloppy
 In the former case, the selector is parsed and does not match an ID selector (it is a composite
 selector matching button elements within the element having the \code{add-user} id), so a
 \code{SelectorFind} node is returned, then translated into a call to the general
@@ -411,7 +427,7 @@ document. If we run this code in a page where the widget is not present, it will
 and stop further JavaScript execution. Defensive code can be written to handle \code{null}
 references, but leads to very cumbersome code, as shown in listing \ref{null-defensive}.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[language=JavaScript,label=null-unsafe,caption=Unsafe code]
 var loginWidget =
   document.querySelector("div.login");
@@ -422,7 +438,7 @@ loginButton.addEventListener("click", handler);
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[language=JavaScript,label=null-defensive,caption=Defensive programming to handle
 null references]
 var loginWidget =
@@ -452,7 +468,7 @@ in listing \ref{null-js-scala}, that implements in js-scala a program equivalent
 expression contains a sequence of statements that are executed in order, as long as the previous
 statement returned a \code{Rep[Some[Element]]} value.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[label=null-js-scala,caption=Handling null references in js-scala]
 for {
   loginWidget <- document.find("div.login")
@@ -466,10 +482,9 @@ but usually involves the creation of an extra container object holding the optio
 case, the monadic API is used in the initial program but generates code that does not wrap values in
 container objects but instead checks if they are \code{null} or not when dereferenced. So the extra
 container object exists only in the initial program and is removed during code generation: listing
-\ref{null-js-scala} produces a code equivalent to listing
-\ref{null-defensive}.
+\ref{null-js-scala} produces a code equivalent to listing~\ref{null-defensive}.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[caption=JavaScript code generator for null references handling
 DSL,label=option-codegen,captionpos=b]
 override def emitNode(sym: Sym[Any], rhs: Def[Any]) =
@@ -507,7 +522,7 @@ previous section, but that has different native counterparts on client and serve
 challenge is to define an API providing a common vocabulary that generates code using the target
 platform native APIs.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[language=JavaScript,caption=JavaScript DOM API,label=dom-api]
 var articleUi = function (article) {
   var div = document.createElement('div');
@@ -526,7 +541,7 @@ var articleUi = function (article) {
 \end{lstlisting}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[caption=Scala XML API,label=scala-xml-api]
 def articleUi(article: Article) =
   <div class="article">
@@ -553,7 +568,7 @@ node. Listing \ref{forest} shows how to implement our example with our DSL. The 
 of an element can also be obtained dynamically from a collection, as shown in listing
 \ref{forest-loops}.
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[label=forest,caption=DOM definition DSL]
 def articleUi(article: Rep[Article]) =
     el('div, 'class -> 'article)(
@@ -563,7 +578,7 @@ def articleUi(article: Rep[Article]) =
 \end{lstlisting}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htb]
 \begin{lstlisting}[label=forest-loops,caption=Using loops]
 def articlesUi(articles: Rep[Seq[Article]]) =
     el('ul)(
@@ -749,19 +764,21 @@ of the total) in the HaXe version. In the js-scala version the DOM fragment defi
 between clients and servers represent 22 lines of Scala code (30\% of the total) and save 15 lines
 of HTML (5\% of the total).
 
-\subsubsection{Threats to Validation}
+\subsubsection{Threats to Validaty}
 
 Our goal was to put the runtime performances in perspective with the level of abstraction. We are
 aware that the indicator we chose as an inverse approximation of the abstraction level, the number
 of lines of code, is not scientifically established and may be subject to discussion. However, we
 think it is a reasonable approximation in our case because all the candidate languages we use have
-a similar syntax, inherited from the C programming language.
+a similar syntax, inherited from the imperative programming language.
 
 Another weakness of our validation may come from the fact that our application does not make an
 heavy use of client-side code and thus may not be representative of the way large Web applications
 are written. However, we think that a richer application would have more parts of code susceptible
 to be shared between client and server sides, thus giving even better results on the code reuse
 statistics.
+
+
 
 Finally, the GWT version may not have been written in an as idiomatic as possible way.
 
