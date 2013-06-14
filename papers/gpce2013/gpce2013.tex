@@ -778,7 +778,7 @@ Our goal was to put the runtime performances in perspective with the level of ab
 aware that the indicator we chose as an inverse approximation of the abstraction level, the number
 of lines of code, is not scientifically established and may be subject to discussion. However, we
 think it is a reasonable approximation in our case because all the candidate languages we use have
-a similar syntax, inherited from the imperative programming language.
+a similar syntax, inherited from the C programming language.
 
 Another weakness of our validation may come from the fact that our application does not make a
 heavy use of client-side code and thus may not be representative of the way large Web applications
@@ -787,7 +787,10 @@ to be shared between client and server sides, thus giving even better results on
 statistics.
 
 Finally, the GWT version may not have been written in an as idiomatic as possible way. 
-Indeed, we mainly catch the events directly on the HTML DOM as we develop in JavaScript without reusing all the GWT widget. We do not build the web applications as a blank page with a set of widgets. However, this way of developing using GWT has no impact on the performance and a minor impact on the number of lines of code. This code has been modularized in the GWT version of Chooze. 
+Indeed, we mainly catch the events directly on the HTML DOM, as we do in JavaScript, without
+reusing all the GWT widgets. We do not build the application as a blank page with a set of
+widgets. However, this way of developing using GWT has no impact on the performance and a minor
+impact on the number of lines of code.
 
 \section{Discussion}
 \label{sec:discussion}
