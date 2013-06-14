@@ -143,7 +143,7 @@ The remainder of this paper is organized as follows. The next section overviews 
 existing approaches providing high-level languages for Web programming. Section \ref{sec:lms}
 presents the framework we used to define our DSLs. Section \ref{sec:contribution} presents our
 contribution. Section \ref{sec:validation} compares our solution to common approaches. Section
-\ref{sec:discussion} discusses our results and section \ref{sec:conclusion} concludes.
+\ref{sec:conclusion} discusses our results and concludes.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -153,7 +153,7 @@ categories, as shown in figure \ref{fig:langs}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=6cm]{langs.pdf}
+\includegraphics[width=7cm]{langs.pdf}
 \end{center}
 \caption{Language engineering processes}
 \label{fig:langs}
@@ -202,7 +202,13 @@ This approach shares the same benefits and limits as embedded DSLs for defining 
 code generation process is specific to each DSL and gives the opportunity to perform domain-specific
 optimizations. In other words deeply embedded DSLs bring domain-specific knowledge to the compiler.
 Js-scala~\cite{Kossakowski12_JsDESL} is an example of deeply embedded DSL in Scala for Web
-programming.
+programming. It makes it possible to produce JavaScript programs from Scala code that uses basic
+language concepts like arrays and control structures (\code{if} and \code{while}) as well as
+mechanisms specific to the Scala compiler, like delimited continuations to handle asynchronous
+computations. Though the initial authors of js-scala showed how to use the native browser APIs in
+untyped fashion, they did not show how to build high-level abstractions for Web programming
+generating efficient code leveraging the browser APIs and did not show how to share such
+abstractions between server and client sides. Our paper addresses these limitations.
 
 \section{Lightweight Modular Staging}
 \label{sec:lms}
@@ -363,7 +369,7 @@ def getWords() = {
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=4cm]{ir.pdf}
+\includegraphics[width=5cm]{ir.pdf}
 \end{center}
 \caption{Intermediate representations returned by the evaluation of (a)
 \code{document.find("\#add-user button")} and (b) \code{document.find("\#add-user")}}
@@ -394,7 +400,8 @@ in the final JavaScript program.
 \subsection{Monads Sequencing}
 \label{sec:option}
 
-This section presents an abstraction that can be shared between client and server code.
+This section presents an abstraction to handle \code{null} references and shows how this
+abstraction can be shared between client and server code.
 
 Null references are a known source of problems in programming
 languages~\cite{Hoare09_Null,Nanda09_Null}. For example, consider listing \ref{null-unsafe} finding
@@ -574,9 +581,9 @@ in listing \ref{forest-loops}), the code generators unroll the loop that adds ch
 parent, for better performance. As a result, listing \ref{forest} generates a code equivalent to
 listing \ref{dom-api} on client-side and equivalent to \ref{scala-xml-api} on server-side.
 
-\begin{figure}
+\begin{figure*}
 \begin{lstlisting}[language=JavaScript,label=js-gen-forest,caption=JavaScript code generator for the
-DOM fragment definition DSL,basicstyle=\ssmall]
+DOM fragment definition DSL]
 case Tag(name, children, attrs) =>
   emitValDef(sym, q"document.createElement('$name')")
   for ((n, v) <- attrs) {
@@ -596,11 +603,11 @@ case Tag(name, children, attrs) =>
 case Text(content) =>
   emitValDef(sym, q"document.createTextNode($content)")
 \end{lstlisting}
-\end{figure}
+\end{figure*}
 
-\begin{figure}
+\begin{figure*}
 \begin{lstlisting}[label=scala-gen-forest,caption=Scala code generator for the DOM fragment
-definition DSL,basicstyle=\ssmall]
+definition DSL]
 case Tag(name, children, attrs) =>
   val attrsFormatted =
     (for ((name, value) <- attrs)
@@ -620,7 +627,7 @@ case Tag(name, children, attrs) =>
 case Text(content) =>
   emitValDef(sym, q"{xml.Text(content)}")
 \end{lstlisting}
-\end{figure}
+\end{figure*}
 
 Listings \ref{js-gen-forest} and \ref{scala-gen-forest} show the relevant parts of the code
 generators for this DSL. They basically follow the same pattern: they visit \code{Tag} and
@@ -700,12 +707,35 @@ JavaScript version.
 
 \subsubsection{Code Reuse}
 
-We were able to share HTML DOM fragment definitions between server-side and client-side only in the
-js-scala version.
+We were able to share some DOM fragment definitions between server-side and client-side only in
+the js-scala version. In the GWT version we don’t have choice: dynamic DOM fragments are always
+built only on client-side (a practice that makes it more difficult to make the pages content
+crawlable by search engines and may increase the initial display time). In the other versions the
+code for building the DOM fragment is duplicated between client and server sides, representing 20
+lines of JavaScript code (17\% of the total) and 15 lines of HTML (5\% of the total) in the
+JavaScript version, and 19 lines of HaXe code (13\% of the total) and 15 lines of HTML (5\%
+of the total) in the HaXe version. In the js-scala version the DOM fragment definitions shared
+between clients and servers represent 22 lines of Scala code (30\% of the total) and save 15 lines
+of HTML (5\% of the total).
 
+\subsubsection{Threats to Validation}
+
+Our goal was to put the runtime performances in perspective with the level of abstraction. We are
+aware that the indicator we chose as an inverse approximation of the abstraction level, the number
+of lines of code, is not scientifically established and may be subject to discussion. However, we
+think it is a reasonable approximation in our case because all the candidate languages we use have
+a similar syntax, inherited from the C programming language.
+
+Another weakness of our validation may come from the fact that our application does not make an
+heavy use of client-side code and thus may not be representative of the way large Web applications
+are written. However, we think that a richer application would have more parts of code susceptible
+to be shared between client and server sides, thus giving even better results on the code reuse
+statistics.
+
+Finally, the GWT version may not have been written in an as idiomatic as possible way.
 
 \section{Discussion}
-\label{sec:discussion}
+\label{sec:conclusion}
 
 We implemented our solution as compiled embedded DSLs in Scala. Generating code from our DSLs is a
 two steps process: an initial Scala program first evaluates to an intermediate representation of
@@ -726,13 +756,6 @@ These characteristics allowed us to capture some Web programming patterns as hig
 abstractions, making the code of our application simpler to reason about and making some parts of
 the code reusable between client and server sides, while keeping execution performances on
 client-side as high as if we used hand-tuned low-level JavaScript code.
-
-\section{Conclusion}
-\label{sec:conclusion}
-
-We were able to provide high-level abstractions for Web programming, decreasing code complexity and
-improving code reuse between client and server sides, while generating efficient low-level code
-leveraging both client and server environments.
 
 %\appendix
 %\section{Appendix Title}
