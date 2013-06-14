@@ -528,7 +528,105 @@ window.on(MouseWheel) { e =>
 
 \subsection{Selectors}
 
-Less type annotations on DOM queries, less chance to write nonsense casts
+As presented in the introduction, the JavaScript \code{querySelector} function is polymorphic in
+its return type but this return type can not \emph{always} be inferred from its parameters. A
+pragmatic solution to this problem would be to return by default the most general type, to handle
+cases where a more specialized return type can be safely inferred without requiring an explicit
+annotation from users, and finally to handle cases where users have to down-cast the return type
+while forbidding to cast to an impossible return type.
+
+First, we start by making the return type bound to the most general return type:
+
+\begin{lstlisting}
+def find[A <: Element](selector: Rep[String]): Rep[A]
+\end{lstlisting}
+
+When calling this function, the \code{A} type parameter can be filled at use-site but can only be
+filled with a type that is a subtype of \code{Element}, so we forbid cases like the following:
+
+\begin{lstlisting}
+find[Int](".title") // Does not compile
+\end{lstlisting}
+
+However, if the \code{A} type parameter is not explicitly filled by the user, the Scala compiler
+infers the greatest lower bound for \code{A}: \code{Nothing}.
+
+\begin{lstlisting}
+find(".title") // Returns Rep[Nothing]...
+\end{lstlisting}
+
+We can fix that by replacing the bounded quantification by an implicit parameter \emph{witnessing}
+that \code{A} can be the result of searching elements in the DOM:
+
+\begin{lstlisting}
+def find[A](selector: Rep[String])(implicit ev: Findable[A]): Rep[A]
+
+class Findable[A]
+object Findable {
+  implicit val default: Findable[Element] = new Findable[Element]
+  implicit def elementSub[A <: Element]: Findable[A] = new Findable[A]
+}
+\end{lstlisting}
+
+If users try to fill \code{A} with \code{Int} they get a compile error (implicit not found).
+
+So far, our definition has the most general return type by default and allows users to explicitly
+ask to down-cast the result to a subtype of \code{Element}, but our definition is still unable to
+automatically infer a more specialized return type when possible.
+
+We solve this problem by making the \code{selector} parameter polymorphic too and by replacing the
+previous implicit parameter by another one fixing the return type of the function according to the
+selector parameter type:
+
+\begin{lstlisting}
+def find[A, B](selector: A)(implicit evidence: A Selects B): B
+
+class Selects[A, B]
+object Selects {
+  // Case of selector being a String
+  implicit val string: String Selects Element = new Selects[String, Element]
+  implicit def elementSub[A <: Element]: String Selects A = new Selects[String, A]
+  // Case of selector being an element name (cf below)
+  implicit def elementName[A <: Element]: ElementName[A] Selects A =
+    new Selects[ElementName[A], A]
+}
+
+class ElementName[A <: Element]
+val Div: ElementName[DivElement] = new ElementName[DivElement]
+\end{lstlisting}
+
+Now users can write the following:
+
+\begin{lstlisting}
+find(".foo") // returns an Element
+find[String, InputElement](".foo") // returns an InputElement
+find[String, Int](".foo") // does not compile
+find(Div) // returns a DivElement
+find[ElementName[DivElement], Int](Div) // does not compile
+\end{lstlisting}
+
+However, now that the \code{find} function takes two type parameters, users have to supply both
+if they want to explicitly down-cast the return type of the query. We can solve this problem by
+creating an intermediate class:
+
+\begin{lstlisting}
+trait FindBuilder[B] {
+  def apply[A](selector: A)(implicit evidence: A Selects B): B
+}
+
+def find[B]: FindBuilder[B]
+\end{lstlisting}
+
+Now users can write the following:
+
+\begin{lstlisting}
+find(".foo") // returns an Element
+find[InputElement](".foo") // returns an InputElement
+find[Int](".foo") // does not compile
+find(Div) // returns a DivElement
+find[Int](Div) // does not compile
+\end{lstlisting}
+
 
 \section{Evaluation}
 
