@@ -86,7 +86,7 @@ The more interactive the application is, the more logic needs to be duplicated b
 server-side and the client-side, and the higher is the complexity of the client-side code.
 Developers can use libraries and frameworks to get high-level abstractions on client-side, making
 their code easier to reason about and to maintain, but also making their code run less efficiently
-(due to \emph{abstraction penalty}).
+due to \emph{abstraction penalty}.
 
 Performance is a primary concern in many Web applications, because they are expected to run on a
 broad range of devices, from the powerful desktop personal computer to the less powerful smart
@@ -95,7 +95,7 @@ phone~\cite{Souders08_Perf,Huang10_Perf}.
 Using the same programming language on both server-side and client-side could improve the software
 engineering process by enabling code reuse between both sides. Incidentally, the JavaScript language
 -- which is currently the most supported action language on Web clients -- can be used on
-server-side. Conversely, increasing number of programming languages or compiler back-ends can
+server-side. Conversely, an increasing number of programming languages or compiler back-ends can
 generate JavaScript code (\eg{} Java/GWT~\cite{Chaganti07_GWT},
 SharpKit\footnote{\href{http://sharpkit.net}{http://sharpkit.net}}, Dart~\cite{Griffith11_Dart},
 Kotlin\footnote{\href{http://kotlin.jetbrains.org/}{http://kotlin.jetbrains.org/}},
@@ -120,10 +120,11 @@ On one hand, for engineering reasons, developers want to write Web applications 
 high-level language, abstracting over the target platforms differences and reducing code complexity.
 But on the other hand, for performance reasons, they want to keep control on the way their code is
 compiled to each target platform. We propose to solve this dilemma by providing high-level
-abstractions in compiled domain-specific embedded languages~\cite{Elliott2003_Compiling}: they allow
-the definition of domain-specific languages (DSLs) as libraries on top of a host language, and to
-compile them to a target platform. The deep embedding gives the opportunity to control the code
-generation scheme for a given abstraction and target platform.
+abstractions in compiled domain-specific embedded languages (DSELs)~\cite{Hudak96_DSEL,
+Elliott2003_Compiling}. Compiled DSELs allow the definition of domain-specific languages (DSLs) as
+libraries on top of a host language, and to compile them to a target platform. Their deep embedding
+gives the opportunity to control the code generation scheme for a given abstraction and target
+platform.
 
 Kossakowski \etal introduced \emph{js-scala}, a compiled embedded DSL defined in Scala that
 generates JavaScript code, making it possible to write the client-side code of Web applications
@@ -145,7 +146,7 @@ be shared between clients and servers, it has the same runtime performances on c
 hand-tuned low-level JavaScript code.
 
 The remainder of this paper is organized as follows. The next section overviews the
-existing approaches providing high-level languages for Web programming. Section \ref{sec:lms}
+existing approaches defining high-level languages for Web programming. Section \ref{sec:lms}
 presents the framework we used to define our DSLs. Section \ref{sec:contribution} presents our
 contribution. Section \ref{sec:validation} compares our solution to common approaches. Section
 \ref{sec:conclusion} discusses our results and concludes.
@@ -201,30 +202,31 @@ a domain-specific language for defining Web applications.
 Alternatively, one can define concepts relative to a specific domain as a library on top of a thin
 general purpose language (it is also referred to as a domain-specific \emph{embedded}
 language~\cite{Hudak96_DSEL}). Figure \ref{fig:langs} (c) depicts this approach. Defining such a
-library requires minimal effort, though the syntax of the DSL is limited by the syntax flexibility
-of the host language, and several DSLs interoperate freely within the host language. However, this
-approach gives no opportunity to efficiently translate a concept according to the target
+library requires minimal effort (though the syntax of the DSL is limited by the syntax flexibility
+of the host language) and several DSLs can interoperate freely within the host language. However,
+this approach gives no opportunity to efficiently translate a concept according to the target
 platform characteristics because the compiler has no domain-specific knowledge (though some
-compilers hard-code the translation of some common abstraction such as arrays to leverage the target
-platform characteristics). Examples of languages following this approach are Java/GWT, Kotlin, HaXe
-and SharpKit.
+compilers hard-code the translation of some common abstractions such as arrays to leverage the
+target platform characteristics). Examples of languages following this approach are Java/GWT,
+Kotlin, HaXe and SharpKit.
 
 \paragraph{Deeply Embedded Languages}
 
 %\vspace{0.1cm}
 The last approach, shown in figure \ref{fig:langs} (d), can be seen as a middle-ground between the
 two previous approaches: DSLs are embedded in a host language but use a code generation process.
-This approach shares the same benefits and limits as embedded DSLs for defining language units. The
-code generation process is specific to each DSL and gives the opportunity to perform domain-specific
-optimizations. In other words deeply embedded DSLs bring domain-specific knowledge to the compiler.
-Js-scala~\cite{Kossakowski12_JsDESL} is an example of deeply embedded DSL in Scala for Web
-programming. It makes it possible to produce JavaScript programs from Scala code that uses basic
-language concepts like arrays and control structures (\code{if} and \code{while}) as well as
+This approach shares the same benefits and limitations as embedded DSLs for defining language units.
+However, the code generation process is specific to each DSL and gives the opportunity to perform
+domain-specific optimizations. In other words deeply embedded DSLs bring domain-specific knowledge
+to the compiler. Js-scala~\cite{Kossakowski12_JsDESL} is an example of deeply embedded DSL in Scala
+for Web programming. It makes it possible to produce JavaScript programs from Scala code that uses
+basic language concepts like arrays and control structures (\code{if} and \code{while}) as well as
 mechanisms specific to the Scala compiler, like delimited continuations to handle asynchronous
 computations. Though the initial authors of js-scala showed how to use the native browser APIs in an
 untyped fashion, they did not show how to build high-level abstractions for Web programming
 generating efficient code leveraging the browser APIs and did not show how to share such
-abstractions between server and client sides. Our paper addresses these limitations.
+abstractions between server and client sides (they achieved code sharing, yet on the server-side
+their DSL was not compiled but interpreted). Our paper addresses these limitations.
 
 \section{Lightweight Modular Staging}
 \label{sec:lms}
@@ -341,8 +343,8 @@ decrease in runtime performances.
 
 Instead, we propose a solution that has a high-level API but generates JavaScript code using the
 specialized native API, when possible, in order to get both engineering comfort and performances.
-We are able to achieve this by analyzing, during the first evaluation step, the selector that is
-passed as parameter and, when appropriate, producing JavaScript code using the specialized API,
+We achieve this by analyzing, during the first evaluation step, the selector that is
+passed as parameter and, when appropriate, by producing JavaScript code using the specialized API,
 and otherwise producing code using \code{querySelector} and \code{querySelectorAll}.
 
 \begin{figure}[htb]
@@ -419,7 +421,7 @@ in the final JavaScript program.
 This section presents an abstraction to handle \code{null} references and shows how this
 abstraction can be shared between client and server code.
 
-Null references are a known source of problems in programming
+\code{null} references are a known source of problems in programming
 languages~\cite{Hoare09_Null,Nanda09_Null}. For example, consider listing \ref{null-unsafe} finding
 a particular widget in the page and then a particular button within the widget. The native
 \code{querySelector} method returns \code{null} if no node matched the given selector in the
@@ -461,7 +463,7 @@ convenient syntax for optional value dereferencing, alleviating developers from 
 defensive programming.
 
 In our DSL, we encode an optional value of type \code{Rep[A]} using a \code{Rep[Option[A]]} value,
-which can either be \code{Rep[Some[A]]} (if there is a value) or a \code{Rep[None.type]} (if
+which can either be a \code{Rep[Some[A]]} (if there is a value) or a \code{Rep[None.type]} (if
 there is no value). An optional value can be dereferenced using the \code{for} notation, as shown
 in listing \ref{null-js-scala}, that implements in js-scala a program equivalent to listing
 \ref{null-defensive}. The \code{find} function returns a \code{Rep[Option[Element]]}. The \code{for}
@@ -562,10 +564,10 @@ inconvenient to use.
 
 Our first step consists in capturing, in a high-level API, the concepts common to the JavaScript and
 Scala APIs. Though they are different, both APIs define HTML elements with attributes and content.
-We define an \code{el} function to define an HTML element, eventually containing attributes and
-children elements. Any children of an element that is not an element itself is converted into a text
-node. Listing \ref{forest} shows how to implement our example with our DSL. The children elements
-of an element can also be obtained dynamically from a collection, as shown in listing
+We propose to have a function \code{el} to define an HTML element, eventually containing attributes
+and children elements. Any children of an element that is not an element itself is converted into a
+text node. Listing \ref{forest} shows how to implement our example with our DSL. The children
+elements of an element can also be obtained dynamically from a collection, as shown in listing
 \ref{forest-loops}.
 
 \begin{figure}[htb]
@@ -594,7 +596,7 @@ and produce code building an equivalent DOM tree and XML fragment, respectively.
 of an element are constant values (as in listing \ref{forest}) rather than dynamically computed (as
 in listing \ref{forest-loops}), the code generators unroll the loop that adds children to their
 parent, for better performance. As a result, listing \ref{forest} generates a code equivalent to
-listing \ref{dom-api} on client-side and equivalent to \ref{scala-xml-api} on server-side.
+listing \ref{dom-api} on client-side and equivalent to listing \ref{scala-xml-api} on server-side.
 
 \begin{figure*}
 \begin{lstlisting}[language=JavaScript,label=js-gen-forest,caption=JavaScript code generator for the
@@ -657,12 +659,12 @@ comparing it with common approaches. We take the number of lines of code as an i
 of the level of abstraction. We also evaluate the ability to share code between client and server
 sides.
 
-We realized two micro-benchmarks involving programs essentially using the selectors DSL and the
+We realized two micro-benchmarks involving programs using the selectors DSL and the
 optional value DSL, and we benchmarked a real world program. In each case we have written several
 implementations of the program, using plain JavaScript, Java/GWT, HaXe and js-scala (in each case we
 tried to write the application in an idiomatic way). The performance benchmarks measured the
-execution time of the generated JavaScript code. The tests were run on a DELL Latitude E6430 laptop
-with 8 GB of RAM, on the Google Chrome v27 Web browser.
+execution time of the generated JavaScript code. The tests were executed on a DELL Latitude E6430
+laptop with 8 GB of RAM, on the Google Chrome v27 Web browser.
 
 \subsection{Micro-Benchmarks}
 
@@ -673,7 +675,7 @@ value abstractions.
 
 We could not implement this abstraction in GWT or HaXe as efficiently as we did in js-scala because
 it relies on the staging mechanism: the best we could do in GWT or Haxe is to expose the native
-general APIs (\code{querySelector} and \code{querySelectorAll}). So we directly compared the
+high-level API (\code{querySelector} and \code{querySelectorAll}). So we directly compared the
 execution time of the JavaScript code generated by listing \ref{js-scala-selectors} with a
 JavaScript program equivalent to listing \ref{vanilla-selectors} but using the high-level native
 API (\code{querySelector} and \code{querySelectorAll}) instead. The code was executed in a Web page
@@ -772,7 +774,7 @@ of lines of code, is not scientifically established and may be subject to discus
 think it is a reasonable approximation in our case because all the candidate languages we use have
 a similar syntax, inherited from the imperative programming language.
 
-Another weakness of our validation may come from the fact that our application does not make an
+Another weakness of our validation may come from the fact that our application does not make a
 heavy use of client-side code and thus may not be representative of the way large Web applications
 are written. However, we think that a richer application would have more parts of code susceptible
 to be shared between client and server sides, thus giving even better results on the code reuse
