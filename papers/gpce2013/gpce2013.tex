@@ -149,7 +149,7 @@ The remainder of this paper is organized as follows. The next section overviews 
 existing approaches defining high-level languages for Web programming. Section \ref{sec:lms}
 presents the framework we used to define our DSLs. Section \ref{sec:contribution} presents our
 contribution. Section \ref{sec:validation} compares our solution to common approaches. Section
-\ref{sec:conclusion} discusses our results and concludes.
+\ref{sec:discussion} discusses our results and section \ref{sec:conclusion} concludes.
 
 \section{Related Work}
 \label{sec:related-work}
@@ -669,6 +669,9 @@ tried to write the application in an idiomatic way). The performance benchmarks 
 execution time of the generated JavaScript code. The tests were executed on a DELL Latitude E6430
 laptop with 8 GB of RAM, on the Google Chrome v27 Web browser.
 
+All values displayed in the charts have been normalized so the same chart can show values of
+different kinds without scale issue.
+
 \subsection{Micro-Benchmarks}
 
 The micro-benchmarks measure the performance of our implementation of the selectors and optional
@@ -787,7 +790,7 @@ Finally, the GWT version may not have been written in an as idiomatic as possibl
 Indeed, we mainly catch the events directly on the HTML DOM as we develop in JavaScript without reusing all the GWT widget. We do not build the web applications as a blank page with a set of widgets. However, this way of developing using GWT has no impact on the performance and a minor impact on the number of lines of code. This code has been modularized in the GWT version of Chooze. 
 
 \section{Discussion}
-\label{sec:conclusion}
+\label{sec:discussion}
 
 We implemented our solution as compiled embedded DSLs in Scala. Generating code from our DSLs is a
 two steps process: an initial Scala program first evaluates to an intermediate representation of
@@ -808,6 +811,19 @@ These characteristics allowed us to capture some Web programming patterns as hig
 abstractions, making the code of our application simpler to reason about and making some parts of
 the code reusable between client and server sides, while keeping execution performances on
 client-side as high as if we used hand-tuned low-level JavaScript code.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+High-level abstractions for Web programming, which are useful to decrease the complexity of the code
+and to abstract over the differences between the client and server environments, must be implemented
+in a way to efficiently run on hardware with limited capabilities.
+
+In this paper we showed how to leverage staging to implement high-level abstractions for Web
+programming that are efficiently compiled and that can be shared between client and server sides.
+
+Our benchmarks on a real application using these high-level abstractions showed runtime
+performances similar to hand-optimized low-level code.
 
 %\appendix
 %\section{Appendix Title}
