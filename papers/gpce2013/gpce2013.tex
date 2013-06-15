@@ -710,7 +710,26 @@ times higher than others.
 \subsubsection{Optional Value}
 
 We reimplemented the optional value abstraction in plain JavaScript, Java and HaXe and wrote a small
-program manipulating optional values.
+program manipulating optional values. Listing \ref{lst:option-benchmark} shows the js-scala
+version of this program. The \code{maybe} function is a function partially defined on
+\code{Int} values.
+
+\begin{figure}
+\begin{lstlisting}[label=lst:option-benchmark,caption=Micro-benchmark code for the optional values
+abstraction]
+val maybe = fun { (x: Rep[Int]) =>
+  some(x + 1)
+}
+
+def benchmark = for {
+  a <- maybe(0)
+  b <- maybe(a)
+  c <- maybe(b)
+  d <- maybe(c)
+} yield d
+\end{lstlisting}
+\end{figure}
+
 
 \begin{figure}
 \centering
