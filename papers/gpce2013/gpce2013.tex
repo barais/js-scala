@@ -669,8 +669,10 @@ tried to write the application in an idiomatic way). The performance benchmarks 
 execution time of the generated JavaScript code. The tests were executed on a DELL Latitude E6430
 laptop with 8 GB of RAM, on the Google Chrome v27 Web browser.
 
-All values displayed in the charts have been normalized so the same chart can show values of
-different kinds without scale issue.
+All our charts show three kinds of measures: the first group is the speed execution in operations
+per second (higher is better), the second group is the number of lines of code (lower is better) and
+the last group is the execution speed to number of lines of code ratio (higher is better). We
+normalized the values so the three groups can be shown within a same chart without scale issue.
 
 \subsection{Micro-Benchmarks}
 
@@ -828,8 +830,8 @@ servers that differ in their technical API. We also showed how these abstraction
 between client and server sides. 
 
 Our two kinds of benchmarks, (i) micro-benchmarks to evaluate one abstraction and (ii) a benchmark
-on a real application using these abstractions show performances similar to hand-optimized low-level
-code.
+on a real application using these abstractions, show performances similar to hand-optimized
+low-level code.
 
 
 
