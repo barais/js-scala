@@ -445,8 +445,8 @@ that uses values of type \code{KeyboardEvent}, and the \code{onMouseWheel} metho
 
 However, with this solution the event name can not anymore be a parameter of the program, making it
 impossible to abstract over the task of adding an event listener, though this is easy to write in
-JavaScript and useful to decouple the actions of adding an event listener and reacting to the
-events:
+JavaScript (using curryfication) and useful to decouple the actions of adding an event
+listener and reacting to the events:
 
 \begin{lstlisting}[language=JavaScript,label=react-js]
 var events = function (name) {
@@ -481,17 +481,15 @@ In this listing, \code{data} has type \code{Rep[MouseEvent]} because \code{Click
 We can write a statically typed version of listing \ref{lst:react-js} as follows:
 
 \begin{lstlisting}
-def events[Data](name: EventName[Data])(callback: Rep[Data] => Rep[Unit]) = {
-  on(name)(callback)
-}
-
-val clicks = events(Click)
+val clicks = on(Click)
 clicks(event => println(event))
 clicks(event => alert(event))
 \end{lstlisting}
 
-However, note that the \code{stream} function has to take a type parameter too. Using type
-parameters solved our problem but may lead to an explosion of use of type parameters in the code:
+However, using type parameters may lead to an explosion of use of type parameters in the code.
+A better solution consists in defining the data type associated with an event as a type member
+instead of a type parameter. We can then use dependent method types to refer to the event data type
+from its name:
 
 \begin{lstlisting}
 class EventName {
@@ -505,12 +503,10 @@ val clicks = on(Click)
 clicks(event => println(event.offsetX))
 \end{lstlisting}
 
-(We renamed \code{addEventListener} to \code{on}, for the sake of brevity). An \code{EventName}
-value represents an event that carries its corresponding event data type in its \code{Data} type
-member. The \code{on} method takes a parameter \code{ev} of type \code{EventDef} and a
-\code{handler} parameter whose type refers to the \code{Data} member of the \code{name} parameter,
-so the type of the handler depends on the \code{name} value. We can then define the \code{keyup} and
-\code{mousewheel} events as follows:
+An \code{EventName} value represents an event that carries its corresponding event data type in its
+\code{Data} type member. The \code{on} method takes a parameter \code{ev} of type \code{EventDef}
+and a \code{handler} parameter whose type refers to the \code{Data} member of the \code{name}
+parameter, so the type of the handler depends on the \code{name} value.
 
 The following Scala listing generates code equivalent to listing \ref{event-js} and is completely
 type-safe: if the user misspells the event name or tries to use an undefined property on an event
