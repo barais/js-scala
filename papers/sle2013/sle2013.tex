@@ -173,6 +173,16 @@ val badFormatted = html(extendedHeaders, rows)
 \end{lstlisting}
 \end{figure}
 
+\begin{figure}
+\begin{lstlisting}[label=path-dependent-type-example-2,caption=Path-dependent type example]
+def html(
+    hdrs: Sized[Seq[String]],
+    rows: List[Sized[Seq[String]]])
+    (implicit evidence: hdrs.Size =:= rows.Size) = ...
+\end{lstlisting}
+\end{figure}
+
+
 More advanced type systems, such as the one featured in Scala, increase our confidence in the
 systems we develop and help us reduce the number of bugs before deployment. Path-dependent types and
 dependent method types play a crucial role for attempts to encode information into types that is
