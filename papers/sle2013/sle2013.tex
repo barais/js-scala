@@ -212,7 +212,7 @@ var input = document.createElement('input');
 \end{lstlisting}
 
 \code{div} has type \code{DivElement} while \code{input} has type \code{InputElement}. These types
-have different methods. As stated in the introduction, most statically typed language have an API
+have different members. As stated in the introduction, most statically typed language have an API
 that returns an \code{Element}, which is the least upper bound of the possible types returned by
 \code{createElement}, forcing users to explicitly down-cast the result to the expected type, thus
 loosing type safety.
@@ -234,13 +234,19 @@ depends on its first parameter.
 
 Note that a possible solution in Java could be the use of Generic Types as in the followinglisting:
 
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java,label=dom-generics]
 class ElementName<E> {}
 ElementName<InputElement> Input = new ElementName<InputElement>();
 ElementName<ImageElement> Img = new ElementName<ImageElement>();
 
-<E> E create(ElementName<E> type, String className) {
+<E> E createElement(ElementName<E> name) {
   ...
+}
+
+<E> E create(ElementName<E> name, String className) {
+  E el = createElement(name);
+  el.className = className;
+  return el;
 }
 
 create(Input, "field").focus();
@@ -253,170 +259,11 @@ that’s better for the conciseness.
 \subsubsection{DOM Events.}
 
 
-The following subsection presents a similar issue applies to the DOM events API.
-
-
-
-\subsubsection{Selectors.}
-
-The last motivating example refers to DOM selectors. The problem with selectors is slightly different.
-
-\begin{lstlisting}[language=JavaScript]
-var input = document.querySelector('input');
-var el = document.querySelector('#content');
-\end{lstlisting}
-
-\code{input} can not have another type than \code{InputElement}, but \code{el} can be an element of
-any type (depending on which element has the id \code{content}). Return type can not \emph{always}
-be inferred from the parameters. In this case, down-casting is impossible to avoid, but how to make
-it optional, and how to make it less risky?
-
-We want to be able to write the following code:
-
-\begin{lstlisting}
-val input = document.find(Input) // input has type InputElement
-val el = document.find("#content") // el has type Element
-val img = document.find[Img](".figure") // note that the type Img is 
-                                        // explicitly applied in this case
-                                        // but was automatically inferred 
-                                        // in previous cases
-val error = document.find[Int]("div") // Does not compile: querySelector 
-                                      // can not return a number
-\end{lstlisting}
-
-These three motivating examples highlights some functions often used in a web application developped in JavaScript and discuss the desired FFI. 
-
-%\subsection{dependent types}
-
-\section{Js-scala: A DSL for web programming design using LMS}
-
-
-JavaScript libraries could address some of the challenges presented above, but addressing type safety and
-asynchronous programming issues require language modifications (\eg{} to bring a type system and a sequencing
-notation). Defining a language requires a high effort, especially to build development tools for the language so we
-chose to define our language as a compiled embedded DSL in Scala.
-
-%\subsection{Introduction to Lightweight Modular Staging}
-%\label{intro-lms}
-
-\subsection{LMS Overview}
-
-We use the Lightweight Modular Staging framework (LMS) to define our compiled embedded DSL. The main idea is that a
-program written using a DSL is evaluated in two stages (or steps): the first stage builds an intermediate
-representation of the program and the second stage transforms this intermediate representation into executable code
-(figure \ref{lms-diagram}).
-
-\begin{figure}
-  \centering
-  \includegraphics[width=7cm]{lms.pdf}
-  \caption{Compilation of a program using LMS. An initial Scala program using embedded DSLs (on the left) evaluates
-  to an intermediate representation from which the final program’s code is generated (on the right).}
-  \label{lms-diagram}
-\end{figure}
-
-The bindings between stages are type-directed: a value of type \code{Rep[Int]} in the first stage will yield a value
-of type \code{Int} in the second stage. If you consider the following code:
-\begin{lstlisting}
-val inc: Rep[Int] => Rep[Int] =
-  x => x + 1
-\end{lstlisting}
-The function looks like
-a regular Scala function excepted that its parameter type and its return type are wrapped in the \code{Rep[T]} type
-constructor that denotes intermediate representations. The \code{+} operator has been defined on \code{Rep[Int]}
-values and returns the intermediate representation of an addition. Finally, the \code{inc} function returns the
-intermediate representation of a computation yielding the number following the value of the parameter \code{x}.
-
-You can get a \code{T} value from a \code{Rep[T]} value by generating code from the intermediate representation and
-compiling it:
-\begin{lstlisting}
-val compiledInc: Int => Int =
-  compile(inc)
-\end{lstlisting}
-The \code{compile} function takes a staged program of type \code{Rep[A] => Rep[B]} and returns a final program of
-type \code{A => B}.
-
-The intermediate representation implementation is hidden for users but DSLs authors have to provide the corresponding
-intermediate representation of each construct of their language. For that purpose, LMS comes with an extensible
-intermediate representation implementation defining computations as a graph of statements. In the case of the
-\code{inc} function, this graph contains a \code{Plus} node applied on a \code{Sym} node (the \code{x} parameter) and
-a \code{Const} node (the literal value \code{1}).
-
-Then, the code generation process consists in sorting this graph according to expressions dependencies and to emit
-the code corresponding to each node. The listings \ref{codegen-js} and \ref{codegen-scala} show the JavaScript and
-Scala generated code for the \code{inc} function:
-\begin{multicols}{2}
-\lstinputlisting[language=JavaScript, caption=JavaScript code generation, label=codegen-js]{inc.js}
-\lstinputlisting[caption=Scala code generation, label=codegen-scala]{inc.scala}
-\end{multicols}
-
-Defining a DSL consists in three steps, each defining:
-
-\begin{itemize}
-\item The concrete syntax: an abstract API manipulating \code{Rep[_]} values~;
-\item The intermediate representation: an implementation of the concrete syntax in terms of statement nodes~;
-\item A code generator for the intermediate representation: a \emph{pretty-printer} for each DSL statement node.
-\end{itemize}
-
-\subsubsection{Example: null references}
-
-As an illustration of the staging mechanism, we present a simple DSL to handle null references. This DSL provides an
-abstraction at the stage-level that is removed by optimization during the code generation.
-
-Null references are a known source of problems in programming languages~\cite{Hoare09_Null,Nanda09_Null}. For
-example, consider the following typical JavaScript code finding a particular widget in the page and a then particular
-button in the widget:
-
-\begin{lstlisting}[language=JavaScript,label=null-unsafe,caption=Unsafe code]
-var loginWidget = document.querySelector("div.login");
-var loginButton = loginWidget.querySelector("button.submit");
-loginButton.addEventListener("click", function (e) { ... });
-\end{lstlisting}
-
-The native \code{querySelector} method returns \code{null} if no node matched the given selector in the document. If
-we run the above code in a page where the widget is not present, it will throw an error and stop further JavaScript
-execution. We can write defensive code to handle \code{null} cases, but it leads to very cumbersome code:
-
-\begin{lstlisting}[language=JavaScript,label=null-defensive,caption=Defensive programming to handle null references]
-var loginWidget = document.querySelector("div.login");
-if (loginWidget !== null) {
-  var loginButton = loginWidget.querySelector("button.submit");
-  if (loginButton !== null) {
-    loginButton.addEventListener("click", function (e) { ... });
-  }
-}
-\end{lstlisting}
-
-Ja-scala is a DSL that has both the safety and performance of listing \ref{null-defensive} but the
-expressiveness of listing \ref{null-unsafe}. We can get safety by wrapping potentially null values of type
-\code{Rep[A]} in a container of type \code{Rep[Option[A]]} requiring explicit dereferencing, we can get
-expressiveness by using the Scala \code{for} notation for dereferencing, and finally we can get performance by
-generating code that does not actually wraps values in a container but instead checks if they are \code{null} or not
-when dereferenced. The wrapping container exists only at the stage-level and is removed during the code generation.
-Here is a Scala listing that uses our DSL (implementation details are given in section \ref{implementation}):
-
-\begin{lstlisting}
-for {
-  loginWidget <- document.find("div.login")
-  loginButton <- loginWidget.find("submit.button")
-} loginButton.on(Click) { e => ... }
-\end{lstlisting}
-
-The evaluation of the above listing produces a graph of statements from which JavaScript code equivalent to
-listing \ref{null-defensive} is generated.
-
-\section{Contribution}
-
-\subsection{DOM}
-
-Path-dependent types to abstract over an element name and its data type.
-
-\subsection{Events}
-
-RIAs distinguish themselves from classic Web pages by a higher degree of interactivity. In our
-example we want to let users zoom in and out a map using their mouse wheel. To implement this
-feature we need to attach an event handler for the \code{mousewheel} event on the DOM element
-containing the map. The following listing shows how to attach such an event handler using the native
-JavaScript API:
+A similar issue applies to the DOM events API. Indeed, RIAs distinguish themselves from classic Web
+pages by a higher degree of interactivity. In our example we want to let users zoom in and out a map
+using their mouse wheel. To implement this feature we need to attach an event handler for the
+\code{mousewheel} event on the DOM element containing the map. The following listing shows how to
+attach such an event handler using the native JavaScript API:
 
 \begin{lstlisting}[language=JavaScript,label=event-js,caption=Native JavaScript API to handle
 events]
@@ -476,36 +323,88 @@ clicks(function (event) { console.log(event); });
 clicks(function (event) { alert(event); });
 \end{lstlisting}
 
-We can solve this problem by using a single polymorphic method encoding the dependency between the
-event name and the underlying event data by making the event data type a parameter of the event name
-type:
+As in the previous section, this problem can be solved using Java generics:
 
 \begin{lstlisting}
-class EventName[Data]
-object Click extends EventName[MouseEvent]
+class EventName<EventData> {}
+EventName<MouseEvent> Click = new EventName<EventData> {};
 
-def on[Data](evt: EventName[Data])(callback: Rep[Data] => Rep[Unit]): Rep[Unit]
-
-on(Click) { data =>
-  println(data.offsetX)
+<EventData> void addEventListener(EventName<EventData> name, Function<EventData, Void> callback) {
+    ...
 }
 \end{lstlisting}
 
-In this listing, \code{data} has type \code{Rep[MouseEvent]} because \code{Click} has type
-\code{EventName[MouseEvent]}, which fixes the \code{Data} type parameter of the \code{on} function.
 
-We can write a statically typed version of listing \ref{lst:react-js} as follows:
+\subsubsection{Selectors.}
 
-\begin{lstlisting}
-val clicks = on(Click)
-clicks(event => println(event))
-clicks(event => alert(event))
+The last motivating example refers to DOM selectors. The problem with selectors is slightly different.
+
+\begin{lstlisting}[language=JavaScript]
+var input = document.querySelector('input');
+var el = document.querySelector('#content');
 \end{lstlisting}
 
-However, using type parameters may lead to an explosion of use of type parameters in the code.
-A better solution consists in defining the data type associated with an event as a type member
-instead of a type parameter. We can then use dependent method types to refer to the event data type
-from its name:
+\code{input} can not have another type than \code{InputElement}, but \code{el} can be an element of
+any type (depending on which element has the id \code{content}). Return type can not \emph{always}
+be inferred from the parameters. In this case, down-casting is impossible to avoid, but how to make
+it optional, and how to make it less risky?
+
+We want to be able to write the following code:
+
+\begin{lstlisting}
+val input = document.find(Input) // input has type InputElement
+val el = document.find("#content") // el has type Element
+val img = document.find[Img](".figure") // note that the type Img is 
+                                        // explicitly applied in this case
+                                        // but was automatically inferred 
+                                        // in previous cases
+val error = document.find[Int]("div") // Does not compile: querySelector 
+                                      // can not return a number
+\end{lstlisting}
+
+These three motivating examples highlights some functions often used in a web application developped in JavaScript and discuss the desired FFI. 
+
+%\subsection{dependent types}
+
+\section{Using Path-Dependent Types to Build Safe JavaScript Foreign Function Interfaces}
+
+The following section shows the use of path dependent type in Scala to build safe API for DOM manipulation, events managements and DOM selector definition. 
+
+\subsection{DOM}
+
+As seen in the introduction, the return type of the function creating DOM elements depends on
+the value of its first parameter. Listing \ref{dom-generics} shows a statically typed interface
+for the \code{createElement} function using type parameters. However, as shown in the listing,
+functions taking an \code{ElementName} parameter also have to take a type parameter (\eg{} function
+\code{create}). Using type parameters may lead to an explosion of use of type parameters in
+the code. Instead, we propose to use path-dependent types so the dependency between the
+element name and the function return type is more self-contained (no need to fill a type parameter
+at use-site):
+
+\begin{lstlisting}
+class ElementName {
+  type Element
+}
+
+def createElement(name: ElementName): name.Element = ...
+\end{lstlisting}
+
+We can rewrite the \code{create} function as follows:
+
+\begin{lstlisting}
+def create(name: ElementName, className: String) = {
+  val el = createElement(name)
+  el.className = className
+  el
+}
+\end{lstlisting}
+
+The \code{create} function type signature is not polluted with an extra type parameter.
+
+
+\subsection{Events}
+
+We can apply the same pattern to the \code{addEventListener} function (renamed to \code{on}):
 
 \begin{lstlisting}
 class EventName {
@@ -532,6 +431,14 @@ his program won’t compile.
 window.on(MouseWheel) { e =>
   scale = Math.round(scale + e.wheelDeltaY / 16)
 }
+\end{lstlisting}
+
+We can write a statically typed version of listing \ref{lst:react-js} as follows:
+
+\begin{lstlisting}
+val clicks = on(Click)
+clicks(event => println(event))
+clicks(event => alert(event))
 \end{lstlisting}
 
 \subsection{Selectors}
@@ -597,10 +504,18 @@ object Selects {
   // Case of selector being an element name (cf below)
   implicit def elementName[A <: Element]: ElementName[A] Selects A =
     new Selects[ElementName[A], A]
+
+  type ElementNameAlias[El] = ElementName { type Element = El }
+  implicit def elementName: ElementNameAlias[El] Selects El
 }
 
 class ElementName[A <: Element]
 val Div: ElementName[DivElement] = new ElementName[DivElement]
+
+class ElementName {
+  type Element
+}
+val Div: ElementName { type Element = DivElement } = new ElementName { type Element = DivElement }
 \end{lstlisting}
 
 Now users can write the following:
@@ -638,8 +553,8 @@ find[Int](Div) // does not compile
 
 \section{Evaluation}
 
-\subsection{Events}
-
+%\subsection{Events}
+\subsection{Related Work}
 
 Other languages either provide loose information about the data type of the listened event (Dart) or
 give no way to abstract over an event (GWT, Kotlin).
@@ -718,8 +633,126 @@ Many of them follow the standard top-down MDE vision in providing abstractions a
 these cannot be easily customized or they generate only application skeletons.
 
 
+\section{Tooling support: Js-scala A DSL for web programming design using LMS}
+
+
+JavaScript libraries could address some of the challenges of the development of web applications, but addressing type safety and asynchronous programming issues require language modifications (\eg{} to bring a type system and a sequencing notation). Defining a new language create the needs to build FFI with the targeted language in our case JavaScript.  Defining a language requires a high effort, especially to build development tools for the language so we chose to define our language as a compiled embedded DSL in Scala to benefit for the support of LMS~\cite{ecoop2012} to build a DSL and the existing Scala type system. 
+
+%\subsection{Introduction to Lightweight Modular Staging}
+%\label{intro-lms}
+
+\subsection{LMS Overview}
+
+We use the Lightweight Modular Staging framework (LMS) to define our compiled embedded DSL. The main idea is that a program written using a DSL is evaluated in two stages (or steps): the first stage builds an intermediate representation of the program and the second stage transforms this intermediate representation into executable code
+(figure \ref{lms-diagram}).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=7cm]{lms.pdf}
+  \caption{Compilation of a program using LMS. An initial Scala program using embedded DSLs (on the left) evaluates
+  to an intermediate representation from which the final program’s code is generated (on the right).}
+  \label{lms-diagram}
+\end{figure}
+
+The bindings between stages are type-directed: a value of type \code{Rep[Int]} in the first stage will yield a value of type \code{Int} in the second stage. If you consider the following code:
+\begin{lstlisting}
+val inc: Rep[Int] => Rep[Int] =
+  x => x + 1
+\end{lstlisting}
+The function looks like
+a regular Scala function excepted that its parameter type and its return type are wrapped in the \code{Rep[T]} type
+constructor that denotes intermediate representations. The \code{+} operator has been defined on \code{Rep[Int]}
+values and returns the intermediate representation of an addition. Finally, the \code{inc} function returns the
+intermediate representation of a computation yielding the number following the value of the parameter \code{x}.
+
+You can get a \code{T} value from a \code{Rep[T]} value by generating code from the intermediate representation and
+compiling it:
+\begin{lstlisting}
+val compiledInc: Int => Int =
+  compile(inc)
+\end{lstlisting}
+The \code{compile} function takes a staged program of type \code{Rep[A] => Rep[B]} and returns a final program of
+type \code{A => B}.
+
+The intermediate representation implementation is hidden for users but DSLs authors have to provide the corresponding
+intermediate representation of each construct of their language. For that purpose, LMS comes with an extensible
+intermediate representation implementation defining computations as a graph of statements. In the case of the \code{inc} function, this graph contains a \code{Plus} node applied on a \code{Sym} node (the \code{x} parameter) and a \code{Const} node (the literal value \code{1}).
+
+Then, the code generation process consists in sorting this graph according to expressions dependencies and to emit the code corresponding to each node. The listings \ref{codegen-js} and \ref{codegen-scala} show the JavaScript and
+Scala generated code for the \code{inc} function:
+\begin{multicols}{2}
+\lstinputlisting[language=JavaScript, caption=JavaScript code generation, label=codegen-js]{inc.js}
+\lstinputlisting[caption=Scala code generation, label=codegen-scala]{inc.scala}
+\end{multicols}
+
+Defining a DSL consists in three steps, each defining:
+
+\begin{itemize}
+\item The concrete syntax: an abstract API manipulating \code{Rep[_]} values~;
+\item The intermediate representation: an implementation of the concrete syntax in terms of statement nodes~;
+\item A code generator for the intermediate representation: a \emph{pretty-printer} for each DSL statement node.
+\end{itemize}
+
+As a result, a Scala program that used the concept defined in our DSL can be compiled in JavaScipt. 
+
+\subsubsection{Example: null references}
+
+As an illustration of the staging mechanism, we present a simple abstraction provided in JS-Scaka to handle null references. JS-Scala provides an
+abstraction at the stage-level that is removed by optimization during the code generation.
+
+Null references are a known source of problems in programming languages~\cite{Hoare09_Null,Nanda09_Null}. For
+example, consider the following typical JavaScript code finding a particular widget in the page and a then particular button in the widget:
+
+\begin{lstlisting}[language=JavaScript,label=null-unsafe,caption=Unsafe code]
+var loginWidget = document.querySelector("div.login");
+var loginButton = loginWidget.querySelector("button.submit");
+loginButton.addEventListener("click", function (e) { ... });
+\end{lstlisting}
+
+The native \code{querySelector} method returns \code{null} if no node matched the given selector in the document. If
+we run the above code in a page where the widget is not present, it will throw an error and stop further JavaScript
+execution. We can write defensive code to handle \code{null} cases, but it leads to very cumbersome code:
+
+\begin{lstlisting}[language=JavaScript,label=null-defensive,caption=Defensive programming to handle null references]
+var loginWidget = document.querySelector("div.login");
+if (loginWidget !== null) {
+  var loginButton = loginWidget.querySelector("button.submit");
+  if (loginButton !== null) {
+    loginButton.addEventListener("click", function (e) { ... });
+  }
+}
+\end{lstlisting}
+
+Ja-scala is a DSL that has both the safety and performance of listing \ref{null-defensive} but the
+expressiveness of listing \ref{null-unsafe}. We can get safety by wrapping potentially null values of type
+\code{Rep[A]} in a container of type \code{Rep[Option[A]]} requiring explicit dereferencing, we can get
+expressiveness by using the Scala \code{for} notation for dereferencing, and finally we can get performance by
+generating code that does not actually wraps values in a container but instead checks if they are \code{null} or not
+when dereferenced. The wrapping container exists only at the stage-level and is removed during the code generation.
+Here is a Scala listing that uses our DSL (implementation details are given in section \ref{implementation}):
+
+\begin{lstlisting}
+for {
+  loginWidget <- document.find("div.login")
+  loginButton <- loginWidget.find("submit.button")
+} loginButton.on(Click) { e => ... }
+\end{lstlisting}
+
+The evaluation of the above listing produces a graph of statements from which JavaScript code equivalent to
+listing \ref{null-defensive} is generated.
+
+
+
 
 \section{Conclusion and Perspectives}
+
+%Reprendre l'abstract et résumé l'idée et le fait que cela a été developpé dans JSScala
+
+%Proposer une solution générique pour que l'utilisateur puisse se définir facilement ses propres FFIs
+
+% enter une étude empirique pour savoir sur une population de développeur si l'introduction de path dependent type pour la définition de FFI est vue comme une source de complexité ou une fonction cool ;)
+
+
 
 
 \bibliographystyle{plain}
