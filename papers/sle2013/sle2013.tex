@@ -553,6 +553,7 @@ find[Int](Div) // does not compile
 
 \section{Evaluation}
 
+The validation of this work is twofold. In a first step, an overview of related work allows us to study that any of the competing approaches provides an effective support FFI ensuring safe-typing and expressiveness close to the JavaScript APIs. In a second step, we show the implementation of this principle within a real language for building web application: JS-Scala Scala-based DSL providing abstractions for the development of web application.
 %\subsection{Events}
 \subsection{Related Work}
 
@@ -633,7 +634,7 @@ Many of them follow the standard top-down MDE vision in providing abstractions a
 these cannot be easily customized or they generate only application skeletons.
 
 
-\section{Tooling support: Js-scala A DSL for web programming design using LMS}
+\subsection{Tooling support: Js-scala A DSL for web programming design using LMS}
 
 
 JavaScript libraries could address some of the challenges of the development of web applications, but addressing type safety and asynchronous programming issues require language modifications (\eg{} to bring a type system and a sequencing notation). Defining a new language create the needs to build FFI with the targeted language in our case JavaScript.  Defining a language requires a high effort, especially to build development tools for the language so we chose to define our language as a compiled embedded DSL in Scala to benefit for the support of LMS~\cite{ecoop2012} to build a DSL and the existing Scala type system. 
