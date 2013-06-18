@@ -133,20 +133,16 @@ one which is targeted in this paper for the design of FFI between a statically t
 as Scala and a dynamically typed language such as JavaScript.
 
 
-\subsection{}
+\subsection{Path-Dependent Type Overview}
 
 A type system provides us a near mathematical proof that programs that compile successfully obey a
 set of rules and restrictions and, as such, are bug-free in that respect. For example, after
-compiling a Java program, developer knows that the it will not do a division of a number with a
+compiling a Java program, developer knows that it will not do a division of a number with a
 string and that, if our method foo receives an integer as argument, it will not be called anywhere
-with an argument of any type other than an integer.
-
-Among all the type theory,  dependent types is a term that describes using values as types, the type
-depends on a value. This means you can encode some properties of an object in its type. Once you do
+with an argument of any type other than an integer. Among all the type theory,  dependent types is a term that describes using values as types, the type depends on a value. This means you can encode some properties of an object in its type. Once you do
 that, it allows a type checker (a compiler) to verify that the object (type) is used in a suitable
-way. Scala defines a concept of path-dependent type. Scala has the concept of abstract types: types
-that, just like abstract methods, must be defined by subclasses. Objects can have a type as members.
-As the term path-dependent type says, the type depends on the path: in general, different paths give
+way. Scala has the concept of abstract types: types
+that, just like abstract methods, must be defined by subclasses. Objects can have a type as members. On top of this abstract type, Scala defines a concept of path-dependent type.  As the term path-dependent type says, the type depends on the path: in general, different paths give
 rise to different types. In the example of Figure~\ref{pathdependenttypeexample}\footnote{highly inspired from https://github.com/milessabin/shapeless\#sized-types}, we show how the size of the list can be used as a type information. We define a function row that convert a list of element into a printed html array, we define a function html that takes a list of size N as a first parameter and a list of list of size N as a second parameter. We use the path dependent type to create these type lists: \emph{Sized}. Consequently if we use this function \emph{html} with a list of three elements (\textit{headers}) and a list of list of 3 elements (\textit{rows}), the program compiles and runs correctly. If we use  this function \emph{html} with a list of four elements (\textit{extendedHeaders}) and a list of list of 3 elements (\textit{rows}), it does not compiled. 
 
 
@@ -181,8 +177,7 @@ More advanced type systems, such as the one featured in Scala, increase our conf
 systems we develop and help us reduce the number of bugs before deployment. Path-dependent types and
 dependent method types play a crucial role for attempts to encode information into types that is
 typically only known at runtime. It is important to note that these important validations don't
-require extra effort from developers -– no need to manually write tests or to run third-party tools
-–- and have no runtime performance impact, which is always a key concern when developing online
+require extra effort from developers (no need to manually write tests or to run third-party tools and have no runtime performance impact), which is always a key concern when developing online
 systems. The goal of this paper is to highlight the benefits of putting the Scala type system for
 building efficient web applications.
 
@@ -190,13 +185,14 @@ building efficient web applications.
 % 
 Dynamic typing may give programmers more flexibility but can make it harder for little scripts to grow into mature
 and robust code bases and to perform refactorings~\cite{Meijer04_StaticDynamic}. For instance, in the case of RIAs, a
-mispell in an event name may break the program behavior without anyone getting a sensible error message. Let us trying to come back on some examples of Web API that can no be easily typed correctly without the use of advanced type system.
-
+mispell in an event name may break the program behavior without anyone getting a sensible error message. Let us trying to come back on some examples of Web API that can no be easily typed correctly without the use of advanced type system. The following subsection shows some examples for which FFIs can not be designed easily. 
 
 %TODO do the link and describe the problem. 
 %Why is it difficult to type Web browser’s APIs?
 
-\subsection{DOM Creation}
+\subsection{Motivating Examples}
+
+\subsubsection{DOM Creation}
 
 \begin{lstlisting}[language=JavaScript]
 var div = document.createElement('div');
@@ -244,7 +240,7 @@ create(Img, "figure").setSrc("http://google.com/logo.png");
 However, the type parameter \code{E} has to be filled at use-site. If the compiler can infer it,
 that’s fine.
 
-\subsection{DOM Events}
+\subsubsection{DOM Events}
 
 A similar issue applies to the DOM events API.
 
@@ -274,7 +270,7 @@ val error = document.find[Int]("div") // Does not compile: querySelector can not
 
 
 
-\subsection{dependent types}
+%\subsection{dependent types}
 
 \section{Js-scala: A DSL for web programming design using LMS}
 
