@@ -202,7 +202,7 @@ mispell in an event name may break the program behavior without anyone getting a
 
 \subsection{Motivating Examples}
 
-\subsubsection{DOM Creation}
+\subsubsection{DOM Creation.}
 
 The first motivating example is the definition of a FFI to wrap the JavaScript \textit{createElement} function.
 
@@ -250,14 +250,14 @@ create(Img, "figure").setSrc("http://google.com/logo.png");
 However, the type parameter \code{E} has to be filled at use-site. If the compiler could infer it,
 that’s better for the conciseness.
 
-\subsubsection{DOM Events}
+\subsubsection{DOM Events.}
 
 
 The following subsection presents a similar issue applies to the DOM events API.
 
 
 
-\subsubsection{Selectors}
+\subsubsection{Selectors.}
 
 The last motivating example refers to DOM selectors. The problem with selectors is slightly different.
 
@@ -276,9 +276,12 @@ We want to be able to write the following code:
 \begin{lstlisting}
 val input = document.find(Input) // input has type InputElement
 val el = document.find("#content") // el has type Element
-val img = document.find[Img](".figure") // note that the type Img is explicitly applied in this case
-                                        // but was automatically inferred in previous cases
-val error = document.find[Int]("div") // Does not compile: querySelector can not return a number
+val img = document.find[Img](".figure") // note that the type Img is 
+                                        // explicitly applied in this case
+                                        // but was automatically inferred 
+                                        // in previous cases
+val error = document.find[Int]("div") // Does not compile: querySelector 
+                                      // can not return a number
 \end{lstlisting}
 
 These three motivating examples highlights some functions often used in a web application developped in JavaScript and discuss the desired FFI. 
