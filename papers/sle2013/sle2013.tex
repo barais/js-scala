@@ -212,7 +212,7 @@ var input = document.createElement('input');
 \end{lstlisting}
 
 \code{div} has type \code{DivElement} while \code{input} has type \code{InputElement}. These types
-have different methods. As stated in the introduction, most statically typed language have an API
+have different members. As stated in the introduction, most statically typed language have an API
 that returns an \code{Element}, which is the least upper bound of the possible types returned by
 \code{createElement}, forcing users to explicitly down-cast the result to the expected type, thus
 loosing type safety.
@@ -234,13 +234,19 @@ depends on its first parameter.
 
 Note that a possible solution in Java could be the use of Generic Types as in the followinglisting:
 
-\begin{lstlisting}[language=Java]
+\begin{lstlisting}[language=Java,label=dom-generics]
 class ElementName<E> {}
 ElementName<InputElement> Input = new ElementName<InputElement>();
 ElementName<ImageElement> Img = new ElementName<ImageElement>();
 
-<E> E create(ElementName<E> type, String className) {
+<E> E createElement(ElementName<E> name) {
   ...
+}
+
+<E> E create(ElementName<E> name, String className) {
+  E el = createElement(name);
+  el.className = className;
+  return el;
 }
 
 create(Input, "field").focus();
@@ -253,8 +259,80 @@ that’s better for the conciseness.
 \subsubsection{DOM Events.}
 
 
-The following subsection presents a similar issue applies to the DOM events API.
+A similar issue applies to the DOM events API. Indeed, RIAs distinguish themselves from classic Web
+pages by a higher degree of interactivity. In our example we want to let users zoom in and out a map
+using their mouse wheel. To implement this feature we need to attach an event handler for the
+\code{mousewheel} event on the DOM element containing the map. The following listing shows how to
+attach such an event handler using the native JavaScript API:
 
+\begin{lstlisting}[language=JavaScript,label=event-js,caption=Native JavaScript API to handle
+events]
+mapElement.addEventListener("mousewheel", function (e) {
+  scale = Math.round(scale + e.wheelDeltaY / 16);
+  // ... update the user interface with the new scale
+});
+\end{lstlisting}
+
+The event handler is simply a function taking the event data as a parameter. In the above example we
+use the \code{wheelDeltaY} property of the event to update the scale of the map.
+
+We claim this code is fragile for two reasons. (1) The name of the event is passed as a string, so
+it is easy to mispell it. (2) The callback passed as a second parameter takes a parameter \code{e}
+whose fields vary according to the listened event, but developers have no way to check that the
+fields they’re using are indeed defined on the event they’re listening to. For instance, in our case
+we use the \code{wheelDeltaY} event field that is defined only on the \code{mousewheel} event.
+
+We want to bring safety to the event handling API so that developers cannot mispell an event name
+and cannot attempt to read a property that is not defined on the type of the handled event. The
+difficulty comes from the fact that the type of data passed to the handler varies with the event
+name. For instance, in listing \ref{event-js} the handler processes \code{MouseWheelEvent} values
+because it listens to \code{mousewheel} events. Values of type \code{MouseWheelEvent} have a
+property \code{wheelDeltaY} but that’s not the case of an event data of type \code{KeyboardEvent},
+for example.
+
+A possible solution could be to define a distinct method for each event instead of the single
+\code{addEventListener} method, so each method takes a handler with the according event type:
+
+\begin{lstlisting}
+window.onKeyUp { e: Rep[KeyboardEvent] =>
+  println(e.key)
+}
+window.onMouseWheel { e: Rep[MouseWheelEvent] =>
+  println(e.wheelDeltaY)
+}
+\end{lstlisting}
+
+In the above listing, the \code{onKeyUp} method attaches an event handler for the \code{keyup} event
+that uses values of type \code{KeyboardEvent}, and the \code{onMouseWheel} method does the same for
+\code{mousewheel} events that use values of type \code{MouseWheelEvent}.
+
+However, with this solution the event name can not anymore be a parameter of the program, making it
+impossible to abstract over the task of adding an event listener, though this is easy to write in
+JavaScript (using curryfication) and useful to decouple the actions of adding an event
+listener and reacting to the events:
+
+\begin{lstlisting}[language=JavaScript,label=react-js]
+var events = function (name) {
+  return function (callback) {
+    window.addEventListener(name, callback);
+  }
+};
+
+var clicks = events('click');
+clicks(function (event) { console.log(event); });
+clicks(function (event) { alert(event); });
+\end{lstlisting}
+
+As in the previous section, this problem can be solved using Java generics:
+
+\begin{lstlisting}
+class EventName<EventData> {}
+EventName<MouseEvent> Click = new EventName<EventData> {};
+
+<EventData> void addEventListener(EventName<EventData> name, Function<EventData, Void> callback) {
+    ...
+}
+\end{lstlisting}
 
 
 \subsubsection{Selectors.}
@@ -408,104 +486,39 @@ listing \ref{null-defensive} is generated.
 
 \subsection{DOM}
 
-Path-dependent types to abstract over an element name and its data type.
+As seen in the introduction, the return type of the function creating DOM elements depends on
+the value of its first parameter. Listing \ref{dom-generics} showed a statically typed interface
+for the \code{createElement} function using type parameters. However, as shown in the listing,
+functions taking an \code{ElementName} parameter also have to take a type parameter (\eg{} function
+\code{create}). Using type parameters may lead to an explosion of use of type parameters in
+the code. Instead, we propose to use path-dependent types so the dependency between the
+element name and the function return type is more self-contained (no need to fill a type parameter
+at use-site):
+
+\begin{lstlisting}
+class ElementName {
+  type Element
+}
+
+def createElement(name: ElementName): name.Element = ...
+\end{lstlisting}
+
+We can rewrite the \code{create} function as follows:
+
+\begin{lstlisting}
+def create(name: ElementName, className: String) = {
+  val el = createElement(name)
+  el.className = className
+  el
+}
+\end{lstlisting}
+
+The \code{create} function type signature is not polluted with an extra type parameter.
+
 
 \subsection{Events}
 
-RIAs distinguish themselves from classic Web pages by a higher degree of interactivity. In our
-example we want to let users zoom in and out a map using their mouse wheel. To implement this
-feature we need to attach an event handler for the \code{mousewheel} event on the DOM element
-containing the map. The following listing shows how to attach such an event handler using the native
-JavaScript API:
-
-\begin{lstlisting}[language=JavaScript,label=event-js,caption=Native JavaScript API to handle
-events]
-mapElement.addEventListener("mousewheel", function (e) {
-  scale = Math.round(scale + e.wheelDeltaY / 16);
-  // ... update the user interface with the new scale
-});
-\end{lstlisting}
-
-The event handler is simply a function taking the event data as a parameter. In the above example we
-use the \code{wheelDeltaY} property of the event to update the scale of the map.
-
-We claim this code is fragile for two reasons. (1) The name of the event is passed as a string, so
-it is easy to mispell it. (2) The callback passed as a second parameter takes a parameter \code{e}
-whose fields vary according to the listened event, but developers have no way to check that the
-fields they’re using are indeed defined on the event they’re listening to. For instance, in our case
-we use the \code{wheelDeltaY} event field that is defined only on the \code{mousewheel} event.
-
-We want to bring safety to the event handling API so that developers cannot mispell an event name
-and cannot attempt to read a property that is not defined on the type of the handled event. The
-difficulty comes from the fact that the type of data passed to the handler varies with the event
-name. For instance, in listing \ref{event-js} the handler processes \code{MouseWheelEvent} values
-because it listens to \code{mousewheel} events. Values of type \code{MouseWheelEvent} have a
-property \code{wheelDeltaY} but that’s not the case of an event data of type \code{KeyboardEvent},
-for example.
-
-A possible solution could be to define a distinct method for each event instead of the single
-\code{addEventListener} method, so each method takes a handler with the according event type:
-
-\begin{lstlisting}
-window.onKeyUp { e: Rep[KeyboardEvent] =>
-  println(e.key)
-}
-window.onMouseWheel { e: Rep[MouseWheelEvent] =>
-  println(e.wheelDeltaY)
-}
-\end{lstlisting}
-
-In the above listing, the \code{onKeyUp} method attaches an event handler for the \code{keyup} event
-that uses values of type \code{KeyboardEvent}, and the \code{onMouseWheel} method does the same for
-\code{mousewheel} events that use values of type \code{MouseWheelEvent}.
-
-However, with this solution the event name can not anymore be a parameter of the program, making it
-impossible to abstract over the task of adding an event listener, though this is easy to write in
-JavaScript (using curryfication) and useful to decouple the actions of adding an event
-listener and reacting to the events:
-
-\begin{lstlisting}[language=JavaScript,label=react-js]
-var events = function (name) {
-  return function (callback) {
-    window.addEventListener(name, callback);
-  }
-};
-
-var clicks = events('click');
-clicks(function (event) { console.log(event); });
-clicks(function (event) { alert(event); });
-\end{lstlisting}
-
-We can solve this problem by using a single polymorphic method encoding the dependency between the
-event name and the underlying event data by making the event data type a parameter of the event name
-type:
-
-\begin{lstlisting}
-class EventName[Data]
-object Click extends EventName[MouseEvent]
-
-def on[Data](evt: EventName[Data])(callback: Rep[Data] => Rep[Unit]): Rep[Unit]
-
-on(Click) { data =>
-  println(data.offsetX)
-}
-\end{lstlisting}
-
-In this listing, \code{data} has type \code{Rep[MouseEvent]} because \code{Click} has type
-\code{EventName[MouseEvent]}, which fixes the \code{Data} type parameter of the \code{on} function.
-
-We can write a statically typed version of listing \ref{lst:react-js} as follows:
-
-\begin{lstlisting}
-val clicks = on(Click)
-clicks(event => println(event))
-clicks(event => alert(event))
-\end{lstlisting}
-
-However, using type parameters may lead to an explosion of use of type parameters in the code.
-A better solution consists in defining the data type associated with an event as a type member
-instead of a type parameter. We can then use dependent method types to refer to the event data type
-from its name:
+We can apply the same pattern to the \code{addEventListener} function (renamed to \code{on}):
 
 \begin{lstlisting}
 class EventName {
@@ -532,6 +545,14 @@ his program won’t compile.
 window.on(MouseWheel) { e =>
   scale = Math.round(scale + e.wheelDeltaY / 16)
 }
+\end{lstlisting}
+
+We can write a statically typed version of listing \ref{lst:react-js} as follows:
+
+\begin{lstlisting}
+val clicks = on(Click)
+clicks(event => println(event))
+clicks(event => alert(event))
 \end{lstlisting}
 
 \subsection{Selectors}
@@ -597,10 +618,18 @@ object Selects {
   // Case of selector being an element name (cf below)
   implicit def elementName[A <: Element]: ElementName[A] Selects A =
     new Selects[ElementName[A], A]
+
+  type ElementNameAlias[El] = ElementName { type Element = El }
+  implicit def elementName: ElementNameAlias[El] Selects El
 }
 
 class ElementName[A <: Element]
 val Div: ElementName[DivElement] = new ElementName[DivElement]
+
+class ElementName {
+  type Element
+}
+val Div: ElementName { type Element = DivElement } = new ElementName { type Element = DivElement }
 \end{lstlisting}
 
 Now users can write the following:
