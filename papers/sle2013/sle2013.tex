@@ -204,6 +204,8 @@ mispell in an event name may break the program behavior without anyone getting a
 
 \subsubsection{DOM Creation}
 
+The first motivating example is the definition of a FFI to wrap the JavaScript \textit{createElement} function.
+
 \begin{lstlisting}[language=JavaScript]
 var div = document.createElement('div');
 var input = document.createElement('input');
@@ -215,9 +217,7 @@ that returns an \code{Element}, which is the least upper bound of the possible t
 \code{createElement}, forcing users to explicitly down-cast the result to the expected type, thus
 loosing type safety.
 
-Alternatively, some languages use overloading.
-
-Consider the following function creating an element and giving it a class name:
+Alternatively, some languages use overloading. Consider the following function creating an element and giving it a class name:
 
 \begin{lstlisting}[language=JavaScript]
 var create = function (elementType, className) {
@@ -232,7 +232,7 @@ create('img', 'figure').src = 'http://google.com/logo.png';
 How to type check the above code? The problem is that the return type of the \code{create} function
 depends on its first parameter.
 
-Note that a possible solution in Java could be the following:
+Note that a possible solution in Java could be the use of Generic Types as in the followinglisting:
 
 \begin{lstlisting}[language=Java]
 class ElementName<E> {}
@@ -247,16 +247,19 @@ create(Input, "field").focus();
 create(Img, "figure").setSrc("http://google.com/logo.png");
 \end{lstlisting}
 
-However, the type parameter \code{E} has to be filled at use-site. If the compiler can infer it,
-that’s fine.
+However, the type parameter \code{E} has to be filled at use-site. If the compiler could infer it,
+that’s better for the conciseness.
 
 \subsubsection{DOM Events}
 
-A similar issue applies to the DOM events API.
 
-\subsection{Selectors}
+The following subsection presents a similar issue applies to the DOM events API.
 
-The problem with selectors is slightly different.
+
+
+\subsubsection{Selectors}
+
+The last motivating example refers to DOM selectors. The problem with selectors is slightly different.
 
 \begin{lstlisting}[language=JavaScript]
 var input = document.querySelector('input');
@@ -278,7 +281,7 @@ val img = document.find[Img](".figure") // note that the type Img is explicitly 
 val error = document.find[Int]("div") // Does not compile: querySelector can not return a number
 \end{lstlisting}
 
-
+These three motivating examples highlights some functions often used in a web application developped in JavaScript and discuss the desired FFI. 
 
 %\subsection{dependent types}
 
